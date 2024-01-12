@@ -24,7 +24,7 @@ contract MobaToken {
         }
     }
 
-    @address function bool transfer(address to, bigint amount) export
+    @address function bool transfer(address to, bigint amount) public
     {
         if(balance >= amount)
         {

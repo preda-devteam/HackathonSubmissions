@@ -1,3 +1,4 @@
 {
-  "token.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd"
+  "token.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd",
+  "item.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd"
 }

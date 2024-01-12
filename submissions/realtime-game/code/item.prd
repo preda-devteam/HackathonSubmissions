@@ -1,3 +1,5 @@
+import MobaToken;
+
 contract Item {
     const uint16 INITIAL_STATS_POINTS = 100u16;
     // 100 for range, and 100 for each stat
@@ -122,6 +124,7 @@ contract Item {
     @global string name;
     @global string desc;
     @global uint256 lastId;
+    @global address studio;     // game studio that gets royalty fee
 
     // @global Stats statPrices;
     // @global Params paramsPrices;
@@ -136,6 +139,7 @@ contract Item {
     @global function on_deploy () {
         name = "Hero";
         desc = "The MOBA hero loved by everyone";
+        studio = __transaction.get_sender();
     }
 
     function uint256 calculateStatsPrice(Stats stats_) public {
@@ -339,7 +343,12 @@ contract Item {
                 price += calculateUtilityPrice(utilities_[i]);
           }
         }
+
         __debug.assert(price > 0u256, "no price detected");
+
+        relay@__transaction.get_sender() (^price) {
+            MobaToken.transfer(studio, bigint(price));
+        } 
 
         lastId += 1u256;
 
