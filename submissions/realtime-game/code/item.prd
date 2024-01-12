@@ -1,0 +1,359 @@
+contract Item {
+    const uint16 INITIAL_STATS_POINTS = 100u16;
+    // 100 for range, and 100 for each stat
+    const uint16 INITIAL_PARAMS_POINTS = 400u16;
+    const uint16 MAX_UTILITY = 3u16;
+
+    // The Item could be targeting the following
+    enum Target {
+        HeroTarget,         // equipped, 200 GOLD
+        AllyTarget,         // in the same team, 300 GOLD
+        EnemyTarget,        // opponent, 300 GOLD
+        BattleArenaTarget   // game scene
+    }
+
+    // Trigger what
+    enum Trigger {
+        ClickTrigger,           // when user clicked on item, 100 GOLD
+        HeroMoveTrigger,        // 50 GOLD
+        HeroIdleTrigger,        // 20 GOLD
+        HeroAliveTrigger,       // 20 GOLD
+        HeroAttackTrigger,      // 50 GOLD
+        HeroDefenseTrigger,     // 100 GOLD
+
+        OnEnterAreaTrigger,     // 50 GOLD
+        OnLeaveAreaTrigger,     // 50 GOLD
+        OnAreaTrigger,          // when hero is within area, 50 GOLD
+        OnAreaCreateTrigger,    // 20 GOLD
+        OnAreaEndTrigger,       // 20 GOLD
+
+        // `Ba` means Battle Arena
+        OnBaStartTrigger,       // 10 GOLD
+        OnBaSpawnCreepTrigger,  // 50 GOLD
+        OnBaTimeChangeTrigger,  // 50 GOLD
+        OnTowerDestructionTrigger,  // 100 GOLD
+        OnTowerAttackedTrigger     // 100 GOLD
+    }
+
+    // Either both are zero, or both has some value.
+    struct Area {
+        uint16 range;
+        uint16 radius;
+    }
+
+    struct Stats {
+        uint16 intelligence;
+        uint16 agility;
+        uint16 strength;
+        // Mp, MpRecovery, magicalDefense
+        array<uint16> intelligenceRatio;
+        // Attack, AttackSpeed, Speed 
+        array<uint16> agilityRatio;
+        // Hp, HpRecovery, Defense
+        array<uint16> strengthRatio;
+    }
+
+    struct Params {
+        uint16 AttackRange;     // required
+
+        // strength derived
+        uint16 Hp;              // health point, required
+        uint16 HpRecovery;      
+        uint16 Defense;         
+
+        // agility derived
+        uint16 Attack;          // required
+        uint16 AttackSpeed;     // required
+        uint16 Speed;           // required
+        
+        // intelligence
+        uint16 Mp;              // mana point, required
+        uint16 MpRecovery;
+        uint16 Magicaldefense;
+    }
+
+    struct BattleArena {
+        uint16 creepHp;
+        uint16 creepHpRecovery;
+        uint16 creepAttack;
+        uint16 creepAttackSpeed;
+        uint16 creepAttackRange;
+        uint16 creepSpeed;
+        uint16 creepDefense;
+        uint16 creepMagicDefense;
+        uint32 time;    // updated since battle arena updated
+        uint16 towerHp;
+        uint16 towerHpRecovery;
+        uint16 towerAttack;
+        uint16 towerAttackSpeed;
+        uint16 towerAttackRange;
+        uint16 towerDefense;
+        uint16 towerMagicDefense;
+        uint16 laneFriction;        // how slow the speed
+        uint16 nonLaneFriction;
+        uint16 friction;            // both lane and non lane
+    }
+
+    struct Utility {
+        Target target;
+        Area area;
+        Trigger trigger;
+        bool clickable;     // clickable is active
+        uint32 time;        // last time when it was clicked
+        uint16 duration;    // how many seconds it has effect
+        uint16 usable;      // set to 0 
+        uint16 used;
+
+        Stats stats;                // effect applied to the hero
+        Params params;              // effect applied to the hero
+        BattleArena ba;             // effect applied to the game scene
+    }
+
+    struct ItemMeta {
+        array<Utility> utilities; // at most 3 utilities
+        address author;
+        address owner;
+        string name;
+        string desc;
+        uint256 price;
+    }
+
+    // The global parameters of this nft
+    @global string name;
+    @global string desc;
+    @global uint256 lastId;
+
+    // @global Stats statPrices;
+    // @global Params paramsPrices;
+    // @global BattleArena battleArenaPrices;
+
+    @global map<uint256, ItemMeta> metaOf;
+    @global map<uint256, Params> paramsOf;
+    @global map<uint256, Stats> statsOf;
+
+    @global map<hash, bool> uniqueNames;
+
+    @global function on_deploy () {
+        name = "Hero";
+        desc = "The MOBA hero loved by everyone";
+    }
+
+    function uint256 calculateStatsPrice(Stats stats_) public {
+        __debug.assert(stats_.intelligenceRatio.length() == 3u32, "exceeds intelligence ratio");
+        __debug.assert(stats_.agilityRatio.length() == 3u32, "exceeds agility ratio");
+        __debug.assert(stats_.strengthRatio.length() == 3u32, "exceeds strength ratio");
+
+        uint256 price;
+
+        price += uint256(stats_.intelligence);
+        price += uint256(stats_.agility);
+        price += uint256(stats_.strength);
+        for (uint32 i = 1u; i < 3u32; i++) {
+            price += uint256(stats_.intelligenceRatio[i]);
+            price += uint256(stats_.agilityRatio[i]);
+            price += uint256(stats_.strengthRatio[i]);
+        }
+
+        return price;
+    }
+
+    function uint256 calculateParamsPrice(Params params_) public {
+        uint256 price;
+
+        price += uint256(params_.AttackRange);
+        price += uint256(params_.Hp);
+        price += uint256(params_.HpRecovery);
+
+        price += uint256(params_.Attack);
+        price += uint256(params_.AttackSpeed);
+        price += uint256(params_.Speed);
+
+        price += uint256(params_.Mp);
+        price += uint256(params_.MpRecovery);
+        price += uint256(params_.Magicaldefense);
+
+        return price;
+    }
+
+    // BattleArena paramaters
+    function uint256 calculateBaPrice(BattleArena ba_) public {
+        uint256 price;
+
+        price += uint256(ba_.creepHp);
+        price += uint256(ba_.creepHpRecovery);
+        price += uint256(ba_.creepAttack);
+        price += uint256(ba_.creepAttackSpeed);
+        price += uint256(ba_.creepAttackRange);
+        price += uint256(ba_.creepSpeed);
+        price += uint256(ba_.creepDefense);
+        price += uint256(ba_.creepMagicDefense);
+
+        price += uint256(ba_.towerHp);
+        price += uint256(ba_.towerHpRecovery);
+        price += uint256(ba_.towerAttack);
+        price += uint256(ba_.towerAttackSpeed);
+        price += uint256(ba_.towerAttackRange);
+        price += uint256(ba_.towerDefense);
+        price += uint256(ba_.towerMagicDefense);
+
+        price += uint256(ba_.time);
+        if (ba_.friction > 0u16) {
+            price += uint256(ba_.friction);
+        } else {
+            price += uint256(ba_.laneFriction);
+            price += uint256(ba_.nonLaneFriction);
+        }
+
+        return price;
+    }
+
+    // Returns the price of the trigger after validating the target.
+    // The value of the trigger is depends on the area parameter and target.
+    function uint256 calculateTriggerPrice(Target target_, Trigger trigger_, bool is_area_) public {
+        // area trigger is available for the triggers only
+        if (trigger_ == Trigger.OnEnterAreaTrigger) {
+            __debug.assert(is_area_, "not area");
+            return 50u256;
+        } else if (trigger_ == Trigger.OnLeaveAreaTrigger) {
+            __debug.assert(is_area_, "not area");
+            return 50u256;
+        } else if (trigger_ == Trigger.OnAreaTrigger) {
+            __debug.assert(is_area_, "not area");
+            return 50u256;
+        } else if (trigger_ == Trigger.OnAreaCreateTrigger) {
+            __debug.assert(is_area_, "not area");
+            return 20u256;
+        } else if (trigger_ == Trigger.OnAreaEndTrigger) {
+            __debug.assert(is_area_, "not area");
+            return 20u256;
+        } 
+
+        else if (trigger_ == Trigger.ClickTrigger) {
+            return 100u256;
+        } else if (trigger_ == Trigger.HeroMoveTrigger) {
+            __debug.assert(target_ != Target.BattleArenaTarget, "can't in battle arena");
+            return 50u256;
+         } else if (trigger_ == Trigger.HeroIdleTrigger) {
+            __debug.assert(target_ != Target.BattleArenaTarget, "can't in battle arena");
+            return 20u256;
+        } else if (trigger_ == Trigger.HeroAliveTrigger) {
+            __debug.assert(target_ != Target.BattleArenaTarget, "can't in battle arena");
+            return 20u256;
+        } else if (trigger_ == Trigger.HeroAttackTrigger) {
+            __debug.assert(target_ != Target.BattleArenaTarget, "can't in battle arena");
+            return 50u256;
+        } else if (trigger_ == Trigger.HeroDefenseTrigger) {
+            __debug.assert(target_ != Target.BattleArenaTarget, "can't in battle arena");
+            return 100u256;
+        }
+
+        else if (trigger_ == Trigger.OnBaStartTrigger) {
+            __debug.assert(target_ == Target.BattleArenaTarget, "not battle arena");
+            return 10u256;
+        } else if (trigger_ == Trigger.OnBaSpawnCreepTrigger) {
+            __debug.assert(target_ == Target.BattleArenaTarget, "not battle arena");
+            return 50u256;
+        } else if (trigger_ == Trigger.OnBaTimeChangeTrigger) {
+            __debug.assert(target_ == Target.BattleArenaTarget, "not battle arena");
+            return 50u256;
+        } else if (trigger_ == Trigger.OnTowerDestructionTrigger) {
+            __debug.assert(target_ == Target.BattleArenaTarget, "not battle arena");
+            return 100u256;
+        } else if (trigger_ == Trigger.OnTowerAttackedTrigger) {
+            __debug.assert(target_ == Target.BattleArenaTarget, "not battle arena");
+            return 100u256;
+        }
+
+        return 0u256;
+    }
+
+    function uint256 calculateUtilityPrice(Utility utility_) public {
+        // check the target element
+        uint256 price;
+        if (utility_.target == Target.HeroTarget) {
+            price += 200u256;
+        } else if (utility_.target == Target.AllyTarget) {
+            price += 300u256;
+        } else if (utility_.target == Target.EnemyTarget) {
+            price += 300u256;
+        } else if (utility_.target == Target.BattleArenaTarget) {
+            price += 450u256;
+        }
+
+        // requires 100 additional gold for active
+        // no requirement for the passive
+        if (utility_.clickable) {
+            price += 100u256;
+
+            __debug.assert(utility_.duration > 0u32, "clickable must have duration");
+        }
+
+        // area? it costs 100 GOLD at least
+        bool is_area = utility_.area.range > 0u16;
+        if (is_area) {
+            __debug.assert(utility_.area.radius > 0u16, "area target must have radius");
+
+            price += 100u256 + uint256(utility_.area.range * utility_.area.radius);
+        }
+
+        price += calculateTriggerPrice(utility_.target, utility_.trigger, is_area);
+
+        // effect price  
+        uint256 effectPrice;
+        if (utility_.target == Target.BattleArenaTarget) {
+            effectPrice = calculateBaPrice(utility_.ba);
+        } else {
+            effectPrice = calculateStatsPrice(utility_.stats) + calculateParamsPrice(utility_.params);
+        }
+        __debug.assert(effectPrice >= 2u256, "no effect applied");
+
+        // if it's clickable, then the effect price is decreased by 2.
+        if (utility_.clickable) {
+            // effect price decreased by 2 for clickable items.
+            // in return user pays with the utility_.duration * 2 inactivity period.
+            price += (5u256 * uint256(utility_.duration) * (effectPrice / 2u256));
+        } else {
+            price += effectPrice;
+        }
+
+        return price;
+    }
+
+    // Create a new hero
+    // Todo: add a fee
+    @global function mint(
+        array<Utility> utilities_,
+        string name_,
+        string desc_) {
+        // first, verify the meta
+        __debug.assert(name_.length() > 0u16, "empty name");
+        __debug.assert(!uniqueNames.has(hash(name_)), "defined name");
+        __debug.assert(utilities_.length() > 0u16 && utilities_.length() <= MAX_UTILITY, "not enough utilities");
+
+        // Only one clickable effect
+        // and if it's given then it must be the first element
+        uint256 price = calculateUtilityPrice(utilities_[0u32]);
+        if (utilities_.length() > 1u16) {
+            for (uint32 i = 1u; i < utilities_.length(); i++) {
+                __debug.assert(utilities_[i].clickable == false, "should not be clickable");
+                price += calculateUtilityPrice(utilities_[i]);
+          }
+        }
+        __debug.assert(price > 0u256, "no price detected");
+
+        lastId += 1u256;
+
+        // save the parameters
+        uniqueNames[hash(name_)] = true;
+        ItemMeta meta;
+        meta.name = name_;
+        meta.desc = desc_;
+        meta.owner = __transaction.get_sender();
+        meta.author = __transaction.get_sender();
+        meta.utilities = utilities_;
+
+        metaOf[lastId] = meta;
+
+        __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
+    }
+}
