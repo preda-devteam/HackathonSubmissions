@@ -114,10 +114,16 @@ contract Item {
     struct ItemMeta {
         array<Utility> utilities; // at most 3 utilities
         address author;
-        address owner;
         string name;
         string desc;
         uint256 price;
+    }
+
+    struct ItemData {
+        uint256 id;
+        address owner;
+        map<address, uint256> games;
+        map<address, uint256> wins;
     }
 
     // The global parameters of this nft
@@ -131,6 +137,7 @@ contract Item {
     // @global BattleArena battleArenaPrices;
 
     @global map<uint256, ItemMeta> metaOf;
+    @uint256 ItemData dataOf;
 
     @global map<hash, bool> uniqueNames;
 
@@ -355,28 +362,33 @@ contract Item {
         ItemMeta meta;
         meta.name = name_;
         meta.desc = desc_;
-        meta.owner = __transaction.get_sender();
         meta.author = __transaction.get_sender();
         meta.utilities = utilities_;
         meta.price = price;
 
+        
         metaOf[lastId] = meta;
+
+        relay@lastId () {
+            dataOf.owner = __transaction.get_sender();
+            dataOf.id = lastId;
+        }
 
         __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
     }
 
-    @global function transfer(uint256 tokenId, address to) public {
-        __debug.assert(metaOf[tokenId].owner == __transaction.get_sender(), "not owner");
-        metaOf[tokenId].owner = to;
+    @uint256 function transfer(address to) public {
+        __debug.assert(dataOf.owner == __transaction.get_sender(), "not owner");
+        dataOf.owner = to;
 
-        __debug.print("NFT ", tokenId, " was transferred from ", __transaction.get_sender(), " to ", to);
+        __debug.print("NFT ", dataOf.id, " was transferred from ", __transaction.get_sender(), " to ", to);
     }
 
     @global function const uint256 itemPrice(uint256 itemId) public const {
         return metaOf[itemId].price;
     }
 
-    @global function const address ownerOf(uint256 tokenId) public const {
-        return metaOf[tokenId].owner;
+    @uint256 function const address ownerOf() public const {
+        return dataOf.owner;
     }
 }

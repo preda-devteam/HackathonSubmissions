@@ -51,7 +51,9 @@ contract Moba {
 
     @uint256 function import_hero(uint256 heroId) public {
         __debug.assert(__transaction.get_timestamp() > session.start && __transaction.get_timestamp() <= session.start + PREPARE_TIME, "timeout");
-        __debug.assert(Hero.ownerOf(heroId) == __transaction.get_sender(), "not your hero");
+        relay@heroId () {
+            __debug.assert(Hero.ownerOf() == __transaction.get_sender(), "not your hero");
+        }
         __debug.assert(session.end == 0u64, "session end");
 
         bool is_sedentary = false;
@@ -76,8 +78,8 @@ contract Moba {
             MobaToken.transfer(master, bigint(HERO_IMPORT_PRICE));
         } 
 
-        relay@global (^heroId) {
-            Hero.transfer(heroId, master);
+        relay@heroId () {
+            Hero.transfer(master);
         }
 
         if (is_sedentary) {
@@ -90,7 +92,9 @@ contract Moba {
 
     @uint256 function import_item(uint256 itemId) public {
         __debug.assert(__transaction.get_timestamp() > session.start && __transaction.get_timestamp() <= session.start + PREPARE_TIME, "timeout");
-        __debug.assert(Item.ownerOf(itemId) == __transaction.get_sender(), "not your hero");
+        relay@itemId () {
+            __debug.assert(Item.ownerOf() == __transaction.get_sender(), "not your hero");
+        }
         __debug.assert(session.end == 0u64, "session end");
 
         bool is_sedentary = false;
@@ -115,8 +119,8 @@ contract Moba {
             MobaToken.transfer(master, bigint(ITEM_IMPORT_PRICE));
         } 
 
-        relay@global (^itemId) {
-            Item.transfer(itemId, master);
+        relay@itemId () {
+            Item.transfer(master);
         }
         if (is_sedentary) {
             session.sedentaryItems.push(itemId);
@@ -141,8 +145,8 @@ contract Moba {
 
             address to = heroOwners[heroId];
 
-            relay@global (^heroId, ^to) {
-                Hero.transfer(heroId, to);
+            relay@heroId (^to) {
+                Hero.transfer(to);
             }
             session.sedentaryHeroes.pop();
         }
@@ -152,8 +156,8 @@ contract Moba {
 
             address to = heroOwners[heroId];
 
-            relay@global (^heroId, ^to) {
-                Hero.transfer(heroId, to);
+            relay@heroId (^to) {
+                Hero.transfer(to);
             }
             session.nomadHeroes.pop();
         }
@@ -163,8 +167,8 @@ contract Moba {
 
             address to = itemOwners[itemId];
 
-            relay@global (^itemId, ^to) {
-                Item.transfer(itemId, to);
+            relay@itemId (^to) {
+                Item.transfer(to);
             }
             session.sedentaryItems.pop();
         }
@@ -174,14 +178,10 @@ contract Moba {
 
             address to = itemOwners[itemId];
 
-            relay@global (^itemId, ^to) {
-                Item.transfer(itemId, to);
+            relay@itemId (^to) {
+                Item.transfer(to);
             }
             session.nomadItems.pop();
         }
     }
-
-    // the game master marks the end of the session.
-    // the end of the session unlocks the items.
-    // the end of the session unlocks the heroes.
 }

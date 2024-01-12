@@ -47,6 +47,13 @@ contract Hero {
         address owner;
     }
 
+    struct HeroData {
+        uint256 id;
+        address owner;
+        map<address, uint256> games;
+        map<address, uint256> wins;
+    }
+
     // The global parameters of this nft
     @global string name;
     @global string desc;
@@ -56,6 +63,8 @@ contract Hero {
     @global map<uint256, Meta> metaOf;
     @global map<uint256, Params> paramsOf;
     @global map<uint256, Stats> statsOf;
+
+    @uint256 HeroData dataOf;
 
     @global map<hash, bool> uniqueNames;
 
@@ -83,9 +92,19 @@ contract Hero {
         for (uint32 i = 0u; i < 3u32; i++) {
             uint256 itemPrice = Item.itemPrice(items_[i]);
             __debug.assert(itemPrice == ITEM_PRICE, "not valid item");
+            relay@items_[i] () {
+            __debug.assert(Item.ownerOf() == __transaction.get_sender(), "not your item");
+        }
         }
         uint256 itemPrice = Item.itemPrice(items_[3u]);
         __debug.assert(itemPrice == ULTIMATE_ITEM_PRICE, "not valid item");
+
+        relay@items_[3u] () {
+            __debug.assert(Item.ownerOf() == __transaction.get_sender(), "not your item");
+        }
+
+        // todo verify that items are owned by the same user.
+
 
         lastId += 1u256;
 
@@ -157,31 +176,35 @@ contract Hero {
         }
 
         // make sure there is no such kind of hero by stats
-        // add the 3d model
+        // todo: add the 3d model
 
         // save the parameters
         uniqueNames[hash(name_)] = true;
         Meta meta;
         meta.name = name_;
         meta.desc = desc_;
-        meta.owner = __transaction.get_sender();
         meta.author = __transaction.get_sender();
 
         metaOf[lastId] = meta;
         statsOf[lastId] = stats_;
         paramsOf[lastId] = params;
 
+        relay@lastId () {
+            dataOf.id = lastId;
+            dataOf.owner = __transaction.get_sender();
+        }
+
         __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
     }
 
-    @global function transfer(uint256 tokenId, address to) public {
-        __debug.assert(metaOf[tokenId].owner == __transaction.get_sender(), "not owner");
-        metaOf[tokenId].owner = to;
+    @uint256 function transfer(address to) public {
+        __debug.assert(dataOf.owner == __transaction.get_sender(), "not owner");
+        dataOf.owner = to;
 
-        __debug.print("NFT ", tokenId, " was transferred from ", __transaction.get_sender(), " to ", to);
+        __debug.print("NFT ", dataOf.id, " was transferred from ", __transaction.get_sender(), " to ", to);
     }
 
-    @global function const address ownerOf(uint256 tokenId) public const {
-        return metaOf[tokenId].owner;
+    @uint256 function const address ownerOf() public const {
+        return dataOf.owner;
     }
 }
