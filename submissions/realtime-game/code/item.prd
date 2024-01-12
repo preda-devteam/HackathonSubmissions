@@ -131,8 +131,6 @@ contract Item {
     // @global BattleArena battleArenaPrices;
 
     @global map<uint256, ItemMeta> metaOf;
-    @global map<uint256, Params> paramsOf;
-    @global map<uint256, Stats> statsOf;
 
     @global map<hash, bool> uniqueNames;
 
