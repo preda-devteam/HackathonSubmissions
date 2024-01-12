@@ -384,6 +384,18 @@ contract Item {
         __debug.print("NFT ", dataOf.id, " was transferred from ", __transaction.get_sender(), " to ", to);
     }
 
+    @uint256 function transferFromGame(address to, bool won) public {
+    __debug.assert(dataOf.owner == __transaction.get_sender(), "not owner");
+        dataOf.owner = to;
+        dataOf.games[__transaction.get_sender()]++;
+        if (won) {
+            dataOf.wins[__transaction.get_sender()]++;
+        }
+
+        __debug.print("NFT ", dataOf.id, " was transferred from ", __transaction.get_sender(), " to ", to);
+        
+    }
+
     @global function const uint256 itemPrice(uint256 itemId) public const {
         return metaOf[itemId].price;
     }

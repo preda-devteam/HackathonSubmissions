@@ -145,8 +145,8 @@ contract Moba {
 
             address to = heroOwners[heroId];
 
-            relay@heroId (^to) {
-                Hero.transfer(to);
+            relay@heroId (^to, ^sedentaryWon_) {
+                Hero.transferFromGame(to, sedentaryWon_);
             }
             session.sedentaryHeroes.pop();
         }
@@ -156,8 +156,8 @@ contract Moba {
 
             address to = heroOwners[heroId];
 
-            relay@heroId (^to) {
-                Hero.transfer(to);
+            relay@heroId (^to, ^sedentaryWon_) {
+                Hero.transferFromGame(to, !sedentaryWon_);
             }
             session.nomadHeroes.pop();
         }
@@ -167,8 +167,8 @@ contract Moba {
 
             address to = itemOwners[itemId];
 
-            relay@itemId (^to) {
-                Item.transfer(to);
+            relay@itemId (^to, ^sedentaryWon_) {
+                Item.transferFromGame(to, sedentaryWon_);
             }
             session.sedentaryItems.pop();
         }
@@ -178,8 +178,8 @@ contract Moba {
 
             address to = itemOwners[itemId];
 
-            relay@itemId (^to) {
-                Item.transfer(to);
+            relay@itemId (^to, ^sedentaryWon_) {
+                Item.transferFromGame(to, !sedentaryWon_);
             }
             session.nomadItems.pop();
         }
