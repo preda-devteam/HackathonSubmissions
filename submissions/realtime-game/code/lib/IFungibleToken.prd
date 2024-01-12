@@ -1,0 +1,18 @@
+contract IFungibleToken {
+    interface FungibleTokenInterface {
+        // Mint the amount of tokens
+        @address function token mint(bigint amount);
+        // Burn the amount of tokens
+        @address function burn(token t);
+        // Get the amount of token supply
+        @global function bigint getSupply() const;
+        // Get the token name
+        @global function const string getName() const;
+        // Get the token symbol
+        @global function const string getSymbol() const;
+        // Get the token decimals
+        @global function uint32 getDecimals() const;
+        // Get the token owner
+        @global function address getOwner() const;
+    }
+}

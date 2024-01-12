@@ -1,0 +1,43 @@
+import FungibleToken as FT;
+
+contract MobaToken {
+    @global uint64 cid;
+    @global address owner;
+    @address bigint balance;
+
+    @global function on_deploy() {
+        cid = deploy FT("Moba Token", "MOBA", 18u32);
+        owner = __transaction.get_sender();
+    }
+
+    @address function mint(address to, bigint amount) export {
+        __debug.assert(owner == __transaction.get_sender());
+        __debug.assert(amount >= 0ib);
+
+        FT ft = FT(cid);
+        token t = ft.mint(amount);
+
+        relay@to (^amount)
+        {
+			__debug.print("deposit: ", amount);
+            balance += amount;
+        }
+    }
+
+    @address function bool transfer(address to, bigint amount) export
+    {
+        if(balance >= amount)
+        {
+            balance -= amount;
+            relay@to (^amount)
+            {
+				__debug.print("deposit: ", amount);
+                balance += amount;
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+}
