@@ -326,7 +326,7 @@ contract Item {
     @global function mint(
         array<Utility> utilities_,
         string name_,
-        string desc_) {
+        string desc_) public {
         // first, verify the meta
         __debug.assert(name_.length() > 0u16, "empty name");
         __debug.assert(!uniqueNames.has(hash(name_)), "defined name");
@@ -358,9 +358,14 @@ contract Item {
         meta.owner = __transaction.get_sender();
         meta.author = __transaction.get_sender();
         meta.utilities = utilities_;
+        meta.price = price;
 
         metaOf[lastId] = meta;
 
         __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
+    }
+
+    @global function const uint256 itemPrice(uint256 itemId) public const {
+        return metaOf[itemId].price;
     }
 }
