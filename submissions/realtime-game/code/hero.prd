@@ -1,9 +1,12 @@
 import MobaToken;
+import Item;
 
 contract Hero {
     const uint16 INITIAL_STATS_POINTS = 100u16;
     // 100 for range, and 100 for each stat
     const uint16 INITIAL_PARAMS_POINTS = 400u16;
+    const uint256 ITEM_PRICE = 500u256;
+    const uint256 ULTIMATE_ITEM_PRICE = 3000u256;
 
     struct Stats {
         uint16 intelligence;
@@ -39,6 +42,7 @@ contract Hero {
     struct Meta {
         string name;
         string desc;
+        array<uint256> items;  // four items available only
         address author;
         address owner;
     }
@@ -67,10 +71,21 @@ contract Hero {
         uint16 attackRange_,
         string name_,
         string desc_,
-        Stats stats_) export {
+        Stats stats_,
+        array<uint256> items_
+        ) export {
         // first, verify the meta
         __debug.assert(name_.length() > 0u16, "empty name");
         __debug.assert(!uniqueNames.has(hash(name_)), "defined name");
+       
+        __debug.assert(items_.length() == 4u, "not enough items");
+
+        for (uint32 i = 0u; i < 3u32; i++) {
+            uint256 itemPrice = Item.itemPrice(items_[i]);
+            __debug.assert(itemPrice == ITEM_PRICE, "not valid item");
+        }
+        uint256 itemPrice = Item.itemPrice(items_[3u]);
+        __debug.assert(itemPrice == ULTIMATE_ITEM_PRICE, "not valid item");
 
         lastId += 1u256;
 
@@ -104,6 +119,7 @@ contract Hero {
 
         relay@__transaction.get_sender() () {
             bigint price = bigint(INITIAL_STATS_POINTS + INITIAL_PARAMS_POINTS);
+            price *= bigint(ITEM_PRICE * 3u256) + bigint(ULTIMATE_ITEM_PRICE);
             MobaToken.transfer(studio, price);
         } 
 
