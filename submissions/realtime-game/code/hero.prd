@@ -1,3 +1,5 @@
+import MobaToken;
+
 contract Hero {
     const uint16 INITIAL_STATS_POINTS = 100u16;
     // 100 for range, and 100 for each stat
@@ -45,6 +47,7 @@ contract Hero {
     @global string name;
     @global string desc;
     @global uint256 lastId;
+    @global address studio;     // game studio that gets royalty fee
 
     @global map<uint256, Meta> metaOf;
     @global map<uint256, Params> paramsOf;
@@ -55,6 +58,7 @@ contract Hero {
     @global function on_deploy () {
         name = "Hero";
         desc = "The MOBA hero loved by everyone";
+        studio = __transaction.get_sender();
     }
 
     // Create a new hero
@@ -97,6 +101,11 @@ contract Hero {
         __debug.assert(stats_.intelligenceRatio[0u32] > 0u16, "0 mp");
 
         __debug.assert(attackRange_ > 0u16 && attackRange_ < INITIAL_PARAMS_POINTS - 3u16, "invalid attack range");
+
+        relay@__transaction.get_sender() () {
+            bigint price = bigint(INITIAL_STATS_POINTS + INITIAL_PARAMS_POINTS);
+            MobaToken.transfer(studio, price);
+        } 
 
         Params params;
         params.AttackRange = attackRange_;
