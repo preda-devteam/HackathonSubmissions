@@ -365,7 +365,18 @@ contract Item {
         __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
     }
 
+    @global function transfer(uint256 tokenId, address to) public {
+        __debug.assert(metaOf[tokenId].owner == __transaction.get_sender(), "not owner");
+        metaOf[tokenId].owner = to;
+
+        __debug.print("NFT ", tokenId, " was transferred from ", __transaction.get_sender(), " to ", to);
+    }
+
     @global function const uint256 itemPrice(uint256 itemId) public const {
         return metaOf[itemId].price;
+    }
+
+    @global function const address ownerOf(uint256 tokenId) public const {
+        return metaOf[tokenId].owner;
     }
 }

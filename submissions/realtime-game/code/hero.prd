@@ -180,4 +180,8 @@ contract Hero {
 
         __debug.print("NFT ", tokenId, " was transferred from ", __transaction.get_sender(), " to ", to);
     }
+
+    @global function const address ownerOf(uint256 tokenId) public const {
+        return metaOf[tokenId].owner;
+    }
 }
