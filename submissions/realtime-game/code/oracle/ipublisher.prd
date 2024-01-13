@@ -1,0 +1,7 @@
+contract IPublisher {
+    interface PublisherInterface {
+        // register a new
+        @global function register(uint64 cid, address requester);
+        @global function request_price(address requester);
+    }
+}

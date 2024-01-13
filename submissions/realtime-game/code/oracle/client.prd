@@ -1,0 +1,28 @@
+import IConsumer;
+import PriceFeed;
+
+contract Client implements IConsumer.ConsumerInterface {
+
+    // it's a on_deploy, but with self address
+    @address function init() public {
+        address client = __transaction.get_self_address();
+        uint64 id = __id();
+
+        relay@global (^client, ^id) {
+            PriceFeed.register(id, client);
+        }
+
+        __debug.print("client #", __id(), ", registered");
+    }
+
+    @address function request_feed() public {
+        relay@global (address client = __transaction.get_self_address()) {
+            PriceFeed.request_price(client);
+        }
+        __debug.print("client #", __id(), ", requested a feed");
+    }
+
+    @address function announce_feed(bigint amount) public {
+        __debug.print("client #", __id(), ", price was announced: ", amount);
+    }
+}
