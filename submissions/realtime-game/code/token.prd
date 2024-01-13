@@ -40,4 +40,8 @@ contract MobaToken {
 
         return false;
     }
+
+    @address function const bigint balanceOf() public const {
+        return balance;
+    }
 }
