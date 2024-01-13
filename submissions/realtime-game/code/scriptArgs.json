@@ -2,5 +2,6 @@
   "token.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd",
   "item.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd",
   "hero.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd,./item.prd",
-  "moba.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd,./item.prd,./hero.prd"
+  "moba.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd,./item.prd,./hero.prd",
+  "marketplace.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd,./item.prd,./hero.prd"
 }
