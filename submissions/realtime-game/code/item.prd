@@ -378,7 +378,7 @@ contract Item {
     }
 
     @uint256 function transfer(address to) public {
-        __debug.assert(dataOf.owner == __transaction.get_sender(), "not owner");
+        __debug.assert(dataOf.owner == __transaction.get_sender() || dataOf.owner == __transaction.get_initiator_address(), "not owner");
         dataOf.owner = to;
 
         __debug.print("NFT ", dataOf.id, " was transferred from ", __transaction.get_sender(), " to ", to);
