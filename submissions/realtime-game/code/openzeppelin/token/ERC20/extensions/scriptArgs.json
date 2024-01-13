@@ -1,0 +1,5 @@
+{
+  "ERC20Burnable.prd": "./../IERC20.prd",
+  "ERC20Capped.prd": "./../IERC20.prd",
+  "ERC20FlashMint.prd": "./../../../interfaces/IERC3156FlashLender.prd,./../../../interfaces/IERC3156FlashBorrower.prd"
+}

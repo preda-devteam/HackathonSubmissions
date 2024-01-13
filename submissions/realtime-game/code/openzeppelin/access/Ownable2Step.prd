@@ -1,0 +1,90 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (access/Ownable.sol)
+
+/**
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * The initial owner is set to the address provided by the deployer. This can
+ * later be changed with {transferOwnership}.
+ *
+ * This module is used through inheritance. It will make available the
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
+ */
+contract Ownable {
+    @address address _owner; // @address == __address(), _owner is the owner.
+    @address address _pendingOwner;
+    @address bool _init;
+
+    // Init owner of the smartcontract
+    @address function init_ownership(address initial_owner) export {
+        address contract_addr = __transaction.get_self_address();
+        address user_addr = __transaction.get_sender();
+        __debug.assert(_init == false, "initialized");
+        __debug.assert(user_addr != contract_addr, "user calls directly");
+        _owner = initial_owner;
+        _init = true;
+    }
+
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    @address function const address owner() public const {
+        return _owner;
+    }
+
+    @address function const address pendingOwner() public const {
+        return _pendingOwner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    @address function onlyOwner() public const {
+        __debug.assert(_owner == __transaction.get_sender(), "OwnableUnauthorizedAccount");
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby disabling any functionality that is only available to the owner.
+     */
+    @address function renounceOwnership() public {
+        onlyOwner();
+        _transferOwnership(address());
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    @address function transferOwnership(address newOwner) public {
+        onlyOwner();
+        _pendingOwner = newOwner;
+        __debug.print("OwnershipTransferStarted, owner: ", owner(), "newOwner", newOwner);
+    }
+
+    /**
+     * @dev The new owner accepts the ownership transfer.
+     */
+    @address function acceptOwnership() public {
+        __debug.assert(_pendingOwner == __transaction.get_sender(), "OwnableUnauthorizedAccount");
+        _transferOwnership(__transaction.get_sender());
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    @address function _transferOwnership(address newOwner) {
+        address oldOwner = _owner;
+        _pendingOwner = address();
+        _owner = newOwner;
+        __debug.print("OwnershipTransferred, oldOwner: ", oldOwner, ", newOwner: ", newOwner);
+    }
+}

@@ -1,0 +1,24 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/extensions/IERC20Metadata.sol)
+
+/**
+ * @dev Interface for the optional metadata functions from the ERC-20 standard.
+ */
+contract IERC20Metadata {
+    interface Interface {
+        /**
+        * @dev Returns the name of the token.
+        */
+        @global function const string name();
+
+        /**
+        * @dev Returns the symbol of the token.
+        */
+        @global function const string symbol();
+
+        /**
+        * @dev Returns the decimals places of the token.
+        */
+        @global function const uint8 decimals();
+    }
+}

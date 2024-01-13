@@ -1,0 +1,26 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC721/extensions/IERC721Metadata.sol)
+
+
+/**
+ * @title ERC-721 Non-Fungible Token Standard, optional metadata extension
+ * @dev See https://eips.ethereum.org/EIPS/eip-721
+ */
+contract IERC721Metadata {
+    interface Interface {
+        /**
+        * @dev Returns the token collection name.
+        */
+        @global function const string name() const;
+
+        /**
+        * @dev Returns the token collection symbol.
+        */
+        @global function const string symbol() const;
+
+        /**
+        * @dev Returns the Uniform Resource Identifier (URI) for `tokenId` token.
+        */
+        @global function string tokenURI(uint256 tokenId) const;
+    }
+}

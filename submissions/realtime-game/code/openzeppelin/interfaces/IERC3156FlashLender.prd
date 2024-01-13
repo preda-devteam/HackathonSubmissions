@@ -1,0 +1,41 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (interfaces/IERC3156FlashLender.sol)
+
+// import IERC3156FlashBorrower;
+
+/**
+ * @dev Interface of the ERC-3156 FlashLender, as defined in
+ * https://eips.ethereum.org/EIPS/eip-3156[ERC-3156].
+ */
+contract IERC3156FlashLender {
+    interface ERC3156FlashLenderInterface {
+        /**
+        * @dev The amount of currency available to be lended.
+        * @param tokenAddr The loan currency.
+        * @return The amount of `token` that can be borrowed.
+        */
+        @global function bigint maxFlashLoan(address tokenAddr) const;
+
+        /**
+        * @dev The fee to be charged for a given loan.
+        * @param tokenAddr The loan currency.
+        * @param amount The amount of tokens lent.
+        * @return The amount of `token` to be charged for the loan, on top of the returned principal.
+        */
+        @global function bigint flashFee(address tokenAddr, bigint amount) const;
+
+        /**
+        * @dev Initiate a flash loan.
+        * @param receiver The receiver of the tokens in the loan, and the receiver of the callback.
+        * @param tokenAddr The loan currency.
+        * @param amount The amount of tokens lent.
+        * @param data Arbitrary data structure, intended to contain user-defined parameters.
+        */
+        // @global function bool flashLoan(
+        //     IERC3156FlashBorrower receiver,
+        //     address tokenAddr,
+        //     bigint amount,
+        //     array<uint8> data
+        // );
+    }
+}
