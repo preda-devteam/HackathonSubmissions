@@ -1,0 +1,16 @@
+contract Storage {
+    @uint256 map<hash, string> content;
+    
+    @address function set(uint256 storage_id, string key, string value) public export{
+        relay@storage_id setStringInternal(key, value);
+    }
+
+    @uint256 function setStringInternal(string key, string value) {
+        content[hash(key)] = value;
+    }
+
+    @uint256 function string get(string key) public {
+        return content[hash(key)];
+    }
+
+}

@@ -1,0 +1,15 @@
+allocate.address 4
+chain.deploy @0 Storage.prd Blog.prd
+
+Blog.write @0 {"id":12345, "title": "PREDA", "content": "Hello PREDA."}
+Blog.write @1 {"id":12345, "title": "solidity", "content": "Hello solidity."}
+Blog.write @2 {"id":12346, "title": "PREDA", "content": "Hello PREDA."}
+chain.run
+
+Blog.query @0 {"id":12345, "title": "PREDA"}
+chain.run
+
+viz.addr @all
+
+viz.uint256 12345 Storage
+viz.uint256 12346 Storage

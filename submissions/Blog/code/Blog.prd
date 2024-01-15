@@ -1,0 +1,13 @@
+import Storage;
+contract Blog {
+    @address function write(uint256 id, string title, string content) public export {
+        Storage.set(id, title, content);
+    }
+
+    @address function query(uint256 id, string title) public export {
+        relay@id (^title) {
+            string content = Storage.get(title);
+            __debug.print("the blog is: ", content);
+        }
+    }
+}
