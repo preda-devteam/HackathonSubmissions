@@ -1,0 +1,66 @@
+contract defiPlatform {
+
+    struct Loan {
+        address borrower;
+        bigint amount;
+        bigint interest;
+        bool repaid;
+    }
+
+    struct Escrow {
+        address sender;
+        bigint amount;
+        address recipient;
+    }
+
+    @global bigint treasury;
+    @global array<Loan> loans;
+    @global array<Escrow> escrows;
+    @global bigint escrowBalance;
+
+    function borrow(bigint amount, bigint interest, address borrower) export {
+        loans.push(Loan(borrower, amount, interest, false));
+        treasury -= amount;
+    }
+
+    function repay(bigint amount, address borrower) export {
+        for (uint32 i=0u; i < loans.length(); i++) {
+            if (loans[i].borrower == borrower) {
+                loans[i].amount -= amount;
+                if (loans[i].amount == 0) {
+                    loans[i].repaid = true;
+                }
+            }
+        }
+    }
+
+    function depositEscrow(bigint amount, address recipient, address sender) export {
+        escrowBalance += amount;
+        escrows.push(Escrow(sender, amount, recipient));
+    }
+
+    function withdrawEscrow(bigint amount, address recipient, address sender) export {
+        escrowBalance -= amount;
+        for (uint32 i=0u; i < escrows.length(); i++) {
+            if (escrows[i].sender == sender && escrows[i].recipient == recipient) {
+                escrows[i].amount -= amount;
+                relay@recipient(^amount){
+                    __debug.print("Escrow withdrawn");
+                }
+            }
+        }
+    }
+
+    function refundEscrow(bigint amount, address recipient, address sender) export {
+        escrowBalance -= amount;
+        for (uint32 i=0u; i < escrows.length(); i++) {
+            if (escrows[i].sender == sender && escrows[i].recipient == recipient) {
+                escrows[i].amount -= amount;
+                relay@sender(^amount){
+                    __debug.print("Escrow refunded");
+                }
+            }
+        }
+    }   
+    
+}
