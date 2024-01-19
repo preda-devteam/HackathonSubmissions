@@ -1,0 +1,370 @@
+// prepare the chain: addresses
+
+// allocate some address for the test
+allocate.address 20
+chain.gaslimit 256
+
+// deploy item, hero, token, moba.
+chain.deploy @0 IFungibleToken.prd 
+chain.deploy @0 FungibleToken.prd={name:"void", symbol: "VOID", decimals: 0}
+
+chain.deploy @0 MobaToken.prd
+chain.deploy @0 item.prd
+chain.deploy @0 hero.prd
+chain.deploy @0 moba.prd
+chain.run
+
+state.set address.MobaToken @all { balance:"10000000000000" }
+chain.run
+
+// $bigint.random(32)$ // Kitty.prdts
+
+// deploy random 100 items for the heroes.
+// txn1[] = Item.mintByTest { "utilities_": [
+//         {
+//             "target": "1",
+//             "area": {"range": "10", "radius": "10"},
+//             "trigger": "1",
+//             "clickable": "false", 
+//             "time": "0",    
+//             "duration": "0", 
+//             "usable": "0", 
+//             "used": "0",
+//             "stats": {
+//                 "intelligence": "1",
+//                 "agility": "1",
+//                 "strength": "1",
+//                 "intelligenceRatio": ["1", "0", "0"],
+//                 "agilityRatio": ["1", "0", "0"],
+//                 "strengthRatio": ["1", "0", "0"]
+//             },           
+//             "params": {
+//                 "AttackRange": "1",
+//                 "Hp": "1", 
+//                 "HpRecovery": "1",      
+//                 "Defense": "1",   
+//                 "Attack": "1",   
+//                 "AttackSpeed": "1",  
+//                 "Speed": "1",        
+//                 "Mp": "1", 
+//                 "MpRecovery": "1",
+//                 "Magicaldefense": "1"
+//             },       
+//             "ba": {
+//                 "creepHp": "1",
+//                 "creepHpRecovery": "1",
+//                 "creepAttack": "1",
+//                 "creepAttackSpeed": "1",
+//                 "creepAttackRange": "1",
+//                 "creepSpeed": "1",
+//                 "creepDefense": "1",
+//                 "creepMagicDefense": "1",
+//                 "time": "0",  
+//                 "towerHp": "1",
+//                 "towerHpRecovery": "1",
+//                 "towerAttack": "1",
+//                 "towerAttackSpeed": "1",
+//                 "towerAttackRange": "1",
+//                 "towerDefense": "1",
+//                 "towerMagicDefense": "1",
+//                 "laneFriction": "1",  
+//                 "nonLaneFriction": "1",
+//                 "friction": "1"  
+//             }     
+//         },
+//         {
+//             "target": "1",
+//             "area": {"range": "10", "radius": "10"},
+//             "trigger": "1",
+//             "clickable": "false", 
+//             "time": "0",    
+//             "duration": "0", 
+//             "usable": "0", 
+//             "used": "0",
+//             "stats": {
+//                 "intelligence": "1",
+//                 "agility": "1",
+//                 "strength": "1",
+//                 "intelligenceRatio": ["1", "0", "0"],
+//                 "agilityRatio": ["1", "0", "0"],
+//                 "strengthRatio": ["1", "0", "0"]
+//             },           
+//             "params": {
+//                 "AttackRange": "1",
+//                 "Hp": "1", 
+//                 "HpRecovery": "1",      
+//                 "Defense": "1",   
+//                 "Attack": "1",   
+//                 "AttackSpeed": "1",  
+//                 "Speed": "1",        
+//                 "Mp": "1", 
+//                 "MpRecovery": "1",
+//                 "Magicaldefense": "1"
+//             },       
+//             "ba": {
+//                 "creepHp": "1",
+//                 "creepHpRecovery": "1",
+//                 "creepAttack": "1",
+//                 "creepAttackSpeed": "1",
+//                 "creepAttackRange": "1",
+//                 "creepSpeed": "1",
+//                 "creepDefense": "1",
+//                 "creepMagicDefense": "1",
+//                 "time": "0",  
+//                 "towerHp": "1",
+//                 "towerHpRecovery": "1",
+//                 "towerAttack": "1",
+//                 "towerAttackSpeed": "1",
+//                 "towerAttackRange": "1",
+//                 "towerDefense": "1",
+//                 "towerMagicDefense": "1",
+//                 "laneFriction": "1",  
+//                 "nonLaneFriction": "1",
+//                 "friction": "1"  
+//             }     
+//         },
+//         {
+//             "target": "1",
+//             "area": {"range": "10", "radius": "10"},
+//             "trigger": "1",
+//             "clickable": "false", 
+//             "time": "0",    
+//             "duration": "0", 
+//             "usable": "0", 
+//             "used": "0",
+//             "stats": {
+//                 "intelligence": "1",
+//                 "agility": "1",
+//                 "strength": "1",
+//                 "intelligenceRatio": ["1", "0", "0"],
+//                 "agilityRatio": ["1", "0", "0"],
+//                 "strengthRatio": ["1", "0", "0"]
+//             },           
+//             "params": {
+//                 "AttackRange": "1",
+//                 "Hp": "1", 
+//                 "HpRecovery": "1",      
+//                 "Defense": "1",   
+//                 "Attack": "1",   
+//                 "AttackSpeed": "1",  
+//                 "Speed": "1",        
+//                 "Mp": "1", 
+//                 "MpRecovery": "1",
+//                 "Magicaldefense": "1"
+//             },       
+//             "ba": {
+//                 "creepHp": "1",
+//                 "creepHpRecovery": "1",
+//                 "creepAttack": "1",
+//                 "creepAttackSpeed": "1",
+//                 "creepAttackRange": "1",
+//                 "creepSpeed": "1",
+//                 "creepDefense": "1",
+//                 "creepMagicDefense": "1",
+//                 "time": "0",  
+//                 "towerHp": "1",
+//                 "towerHpRecovery": "1",
+//                 "towerAttack": "1",
+//                 "towerAttackSpeed": "1",
+//                 "towerAttackRange": "1",
+//                 "towerDefense": "1",
+//                 "towerMagicDefense": "1",
+//                 "laneFriction": "1",  
+//                 "nonLaneFriction": "1",
+//                 "friction": "1"  
+//             }     
+//         }
+//     ], "name_":"item $~count$", "desc_": "item for testing" }
+Item.mintByTest @0 { "name_": "item", "desc_": "item for testing", "itemId_": 1 }
+Item.mintByTest @0 { "name_": "item", "desc_": "item for testing", "itemId_": 2 }
+Item.mintByTest @0 { "name_": "item", "desc_": "item for testing", "itemId_": 3 }
+Item.mintByTest @0 { "name_": "item", "desc_": "item for testing", "itemId_": 4 }
+
+Item.mintByTest @1 { "name_": "item", "desc_": "item for testing", "itemId_": 5 }
+Item.mintByTest @1 { "name_": "item", "desc_": "item for testing", "itemId_": 6 }
+Item.mintByTest @1 { "name_": "item", "desc_": "item for testing", "itemId_": 7 }
+Item.mintByTest @1 { "name_": "item", "desc_": "item for testing", "itemId_": 8 }
+
+Item.mintByTest @2 { "name_": "item", "desc_": "item for testing", "itemId_": 9 }
+Item.mintByTest @2 { "name_": "item", "desc_": "item for testing", "itemId_": 10 }
+Item.mintByTest @2 { "name_": "item", "desc_": "item for testing", "itemId_": 11 }
+Item.mintByTest @2 { "name_": "item", "desc_": "item for testing", "itemId_": 12 }
+
+Item.mintByTest @3 { "name_": "item", "desc_": "item for testing", "itemId_": 13 }
+Item.mintByTest @3 { "name_": "item", "desc_": "item for testing", "itemId_": 14 }
+Item.mintByTest @3 { "name_": "item", "desc_": "item for testing", "itemId_": 15 }
+Item.mintByTest @3 { "name_": "item", "desc_": "item for testing", "itemId_": 16 }
+
+Item.mintByTest @4 { "name_": "item", "desc_": "item for testing", "itemId_": 17 }
+Item.mintByTest @4 { "name_": "item", "desc_": "item for testing", "itemId_": 18 }
+Item.mintByTest @4 { "name_": "item", "desc_": "item for testing", "itemId_": 19 }
+Item.mintByTest @4 { "name_": "item", "desc_": "item for testing", "itemId_": 20 }
+
+Item.mintByTest @5 { "name_": "item", "desc_": "item for testing", "itemId_": 21 }
+Item.mintByTest @5 { "name_": "item", "desc_": "item for testing", "itemId_": 22 }
+Item.mintByTest @5 { "name_": "item", "desc_": "item for testing", "itemId_": 23 }
+Item.mintByTest @5 { "name_": "item", "desc_": "item for testing", "itemId_": 24 }
+
+Item.mintByTest @6 { "name_": "item", "desc_": "item for testing", "itemId_": 25 }
+Item.mintByTest @6 { "name_": "item", "desc_": "item for testing", "itemId_": 26 }
+Item.mintByTest @6 { "name_": "item", "desc_": "item for testing", "itemId_": 27 }
+Item.mintByTest @6 { "name_": "item", "desc_": "item for testing", "itemId_": 28 }
+
+Item.mintByTest @7 { "name_": "item", "desc_": "item for testing", "itemId_": 29 }
+Item.mintByTest @7 { "name_": "item", "desc_": "item for testing", "itemId_": 30 }
+Item.mintByTest @7 { "name_": "item", "desc_": "item for testing", "itemId_": 31 }
+Item.mintByTest @7 { "name_": "item", "desc_": "item for testing", "itemId_": 32 }
+
+Item.mintByTest @8 { "name_": "item", "desc_": "item for testing", "itemId_": 33 }
+Item.mintByTest @8 { "name_": "item", "desc_": "item for testing", "itemId_": 34 }
+Item.mintByTest @8 { "name_": "item", "desc_": "item for testing", "itemId_": 35 }
+Item.mintByTest @8 { "name_": "item", "desc_": "item for testing", "itemId_": 36 }
+
+Item.mintByTest @9 { "name_": "item", "desc_": "item for testing", "itemId_": 37 }
+Item.mintByTest @9 { "name_": "item", "desc_": "item for testing", "itemId_": 38 }
+Item.mintByTest @9 { "name_": "item", "desc_": "item for testing", "itemId_": 39 }
+Item.mintByTest @9 { "name_": "item", "desc_": "item for testing", "itemId_": 40 }
+
+Item.mintByTest @10 { "name_": "item", "desc_": "item for testing", "itemId_": 41 }
+Item.mintByTest @10 { "name_": "item", "desc_": "item for testing", "itemId_": 42 }
+Item.mintByTest @10 { "name_": "item", "desc_": "item for testing", "itemId_": 43 }
+Item.mintByTest @10 { "name_": "item", "desc_": "item for testing", "itemId_": 44 }
+
+Item.mintByTest @11 { "name_": "item", "desc_": "item for testing", "itemId_": 45 }
+Item.mintByTest @11 { "name_": "item", "desc_": "item for testing", "itemId_": 46 }
+Item.mintByTest @11 { "name_": "item", "desc_": "item for testing", "itemId_": 47 }
+Item.mintByTest @11 { "name_": "item", "desc_": "item for testing", "itemId_": 48 }
+
+Item.mintByTest @12 { "name_": "item", "desc_": "item for testing", "itemId_": 49 }
+Item.mintByTest @12 { "name_": "item", "desc_": "item for testing", "itemId_": 50 }
+Item.mintByTest @12 { "name_": "item", "desc_": "item for testing", "itemId_": 51 }
+Item.mintByTest @12 { "name_": "item", "desc_": "item for testing", "itemId_": 52 }
+
+Item.mintByTest @13 { "name_": "item", "desc_": "item for testing", "itemId_": 53 }
+Item.mintByTest @13 { "name_": "item", "desc_": "item for testing", "itemId_": 54 }
+Item.mintByTest @13 { "name_": "item", "desc_": "item for testing", "itemId_": 55 }
+Item.mintByTest @13 { "name_": "item", "desc_": "item for testing", "itemId_": 56 }
+
+Item.mintByTest @14 { "name_": "item", "desc_": "item for testing", "itemId_": 57 }
+Item.mintByTest @14 { "name_": "item", "desc_": "item for testing", "itemId_": 58 }
+Item.mintByTest @14 { "name_": "item", "desc_": "item for testing", "itemId_": 59 }
+Item.mintByTest @14 { "name_": "item", "desc_": "item for testing", "itemId_": 60 }
+
+Item.mintByTest @15 { "name_": "item", "desc_": "item for testing", "itemId_": 61 }
+Item.mintByTest @15 { "name_": "item", "desc_": "item for testing", "itemId_": 62 }
+Item.mintByTest @15 { "name_": "item", "desc_": "item for testing", "itemId_": 63 }
+Item.mintByTest @15 { "name_": "item", "desc_": "item for testing", "itemId_": 64 }
+
+Item.mintByTest @16 { "name_": "item", "desc_": "item for testing", "itemId_": 65 }
+Item.mintByTest @16 { "name_": "item", "desc_": "item for testing", "itemId_": 66 }
+Item.mintByTest @16 { "name_": "item", "desc_": "item for testing", "itemId_": 67 }
+Item.mintByTest @16 { "name_": "item", "desc_": "item for testing", "itemId_": 68 }
+
+Item.mintByTest @17 { "name_": "item", "desc_": "item for testing", "itemId_": 69 }
+Item.mintByTest @17 { "name_": "item", "desc_": "item for testing", "itemId_": 70 }
+Item.mintByTest @17 { "name_": "item", "desc_": "item for testing", "itemId_": 71 }
+Item.mintByTest @17 { "name_": "item", "desc_": "item for testing", "itemId_": 72 }
+
+Item.mintByTest @18 { "name_": "item", "desc_": "item for testing", "itemId_": 73 }
+Item.mintByTest @18 { "name_": "item", "desc_": "item for testing", "itemId_": 74 }
+Item.mintByTest @18 { "name_": "item", "desc_": "item for testing", "itemId_": 75 }
+Item.mintByTest @18 { "name_": "item", "desc_": "item for testing", "itemId_": 76 }
+
+Item.mintByTest @19 { "name_": "item", "desc_": "item for testing", "itemId_": 77 }
+Item.mintByTest @19 { "name_": "item", "desc_": "item for testing", "itemId_": 78 }
+Item.mintByTest @19 { "name_": "item", "desc_": "item for testing", "itemId_": 79 }
+Item.mintByTest @19 { "name_": "item", "desc_": "item for testing", "itemId_": 80 }
+
+Item.mintByTest @0 { "name_": "item", "desc_": "item for testing", "itemId_": 101 }
+Item.mintByTest @5 { "name_": "item", "desc_": "item for testing", "itemId_": 102 }
+Item.mintByTest @10 { "name_": "item", "desc_": "item for testing", "itemId_": 103 }
+Item.mintByTest @19 { "name_": "item", "desc_": "item for testing", "itemId_": 104 }
+chain.run
+
+chain.info
+stopwatch.restart
+chain.run
+stopwatch.report
+
+chain.info
+
+
+// deploy random heroes 1000 times. // Token.prdts
+Hero.mintByTest @0 { "name_": "hero", "desc_": "hero for testing", "items_": [1, 2, 3, 4], "heroId_": 1 }
+Hero.mintByTest @1 { "name_": "hero", "desc_": "hero for testing", "items_": [5, 6, 7, 8], "heroId_": 2 }
+Hero.mintByTest @2 { "name_": "hero", "desc_": "hero for testing", "items_": [9, 10, 11, 12], "heroId_": 3 }
+Hero.mintByTest @3 { "name_": "hero", "desc_": "hero for testing", "items_": [13, 14, 15, 16], "heroId_": 4 }
+Hero.mintByTest @4 { "name_": "hero", "desc_": "hero for testing", "items_": [17, 18, 19, 20], "heroId_": 5 }
+Hero.mintByTest @5 { "name_": "hero", "desc_": "hero for testing", "items_": [21, 22, 23, 24], "heroId_": 6 }
+Hero.mintByTest @6 { "name_": "hero", "desc_": "hero for testing", "items_": [25, 26, 27, 28], "heroId_": 7 }
+Hero.mintByTest @7 { "name_": "hero", "desc_": "hero for testing", "items_": [29, 30, 31, 32], "heroId_": 8 }
+Hero.mintByTest @8 { "name_": "hero", "desc_": "hero for testing", "items_": [33, 34, 35, 36], "heroId_": 9 }
+Hero.mintByTest @9 { "name_": "hero", "desc_": "hero for testing", "items_": [37, 38, 39, 40], "heroId_": 10 }
+Hero.mintByTest @10 { "name_": "hero", "desc_": "hero for testing", "items_": [41, 42, 43, 44], "heroId_": 11 }
+Hero.mintByTest @11 { "name_": "hero", "desc_": "hero for testing", "items_": [45, 46, 47, 48], "heroId_": 12 }
+Hero.mintByTest @12 { "name_": "hero", "desc_": "hero for testing", "items_": [49, 50, 51, 52], "heroId_": 13 }
+Hero.mintByTest @13 { "name_": "hero", "desc_": "hero for testing", "items_": [53, 54, 55, 56], "heroId_": 14 }
+Hero.mintByTest @14 { "name_": "hero", "desc_": "hero for testing", "items_": [57, 58, 59, 60], "heroId_": 15 }
+Hero.mintByTest @15 { "name_": "hero", "desc_": "hero for testing", "items_": [61, 62, 63, 64], "heroId_": 16 }
+Hero.mintByTest @16 { "name_": "hero", "desc_": "hero for testing", "items_": [65, 66, 67, 68], "heroId_": 17 }
+Hero.mintByTest @17 { "name_": "hero", "desc_": "hero for testing", "items_": [69, 70, 71, 72], "heroId_": 18 }
+Hero.mintByTest @18 { "name_": "hero", "desc_": "hero for testing", "items_": [73, 74, 75, 76], "heroId_": 19 }
+Hero.mintByTest @19 { "name_": "hero", "desc_": "hero for testing", "items_": [77, 78, 79, 80], "heroId_": 20 }
+chain.run
+
+// Two sessions are playing at the same time.
+Moba.createSessionByTest @0 {"sedentaries_": ["$@0$", "$@1$", "$@2$", "$@3$", "$@4$"], "nomads_": ["$@5$", "$@6$", "$@7$", "$@8$", "$@9$"] }
+Moba.createSessionByTest @0 {"sedentaries_": ["$@10$", "$@11$", "$@12$", "$@13$", "$@14$"], "nomads_": ["$@15$", "$@16$", "$@17$", "$@18$", "$@19$"] }
+chain.run
+
+log.highlight --------------------------------
+log.highlight Live sessions
+log.highlight --------------------------------
+
+log.highlight Live session 1:
+
+Moba.sessionInfo @0 {"sessionId_": 1}
+
+log.highlight Live session 2:
+
+Moba.sessionInfo @0 {"sessionId_": 2}
+chain.run
+
+/////////////////////////////////////////////////////////////////
+//
+// Two sessions are started around the same time.
+// 
+// Showcasing parallel custom NFT imports. In our case for the test it is the items.
+// But it can work with the heroes in the same way.
+//
+//////////////////////////////////////////////////////////////
+log.highlight --------------------------------
+log.highlight Showcasing the usage of Preda's parallel execution model
+log.highlight Import items to a two different sessions at the same time...
+log.highlight --------------------------------
+
+Moba.importItemByTest @0 { "itemId_": 101, "sessionId_": 1 }
+Moba.importItemByTest @5 { "itemId_": 102, "sessionId_": 1 }
+
+Moba.importItemByTest @10 { "itemId_": 103, "sessionId_": 2 }
+Moba.importItemByTest @19 { "itemId_": 104, "sessionId_": 2 }
+chain.run
+
+// close the session. close the second session.
+Moba.endSessionByTest @0 {"sedentaryWon_": true, "sessionId_": 1 }
+Moba.endSessionByTest @0 {"sedentaryWon_": false, "sessionId_": 2 }
+chain.run
+
+log.highlight --------------------------------
+log.highlight Sessions end
+log.highlight --------------------------------
+
+log.highlight Session 1:
+Moba.sessionInfo @0 {"sessionId_": 1}
+log.highlight Session 2:
+Moba.sessionInfo @0 {"sessionId_": 2}
+chain.run
+
+viz.shard #g
+viz.addr @all
+chain.info 

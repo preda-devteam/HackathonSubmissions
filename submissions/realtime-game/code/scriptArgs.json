@@ -1,0 +1,8 @@
+{
+  "MobaToken.prd": "./IFungibleToken.prd,./FungibleToken.prd",
+  "item.prd": "./IFungibleToken.prd,./FungibleToken.prd,./MobaToken.prd",
+  "hero.prd": "./IFungibleToken.prd,./FungibleToken.prd,./MobaToken.prd,./item.prd",
+  "moba.prd": "./IFungibleToken.prd,./FungibleToken.prd,./MobaToken.prd,./item.prd,./hero.prd",
+  "marketplace.prd": "./IFungibleToken.prd,./FungibleToken.prd,./MobaToken.prd,./item.prd,./hero.prd",
+  "moba.prdts": "-count:100"
+}

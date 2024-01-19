@@ -1,0 +1,98 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (token/common/ERC2981.sol)
+
+import IERC2981;
+
+/**
+ * @dev Implementation of the NFT Royalty Standard, a standardized way to retrieve royalty payment information.
+ *
+ * Royalty information can be specified globally for all token ids via {_setDefaultRoyalty}, and/or individually for
+ * specific token ids via {_setTokenRoyalty}. The latter takes precedence over the first.
+ *
+ * Royalty is specified as a fraction of sale price. {FEE_DENOMINATOR} is overridable but defaults to 10000, meaning the
+ * fee is specified in basis points by default.
+ *
+ * IMPORTANT: ERC-2981 only specifies a way to signal royalty information and does not enforce its payment. See
+ * https://eips.ethereum.org/EIPS/eip-2981#optional-royalty-payments[Rationale] in the ERC. Marketplaces are expected to
+ * voluntarily pay royalties together with sales, but note that this standard is not yet widely supported.
+ */
+contract ERC2981 implements IERC2981.ERC2981Interface {
+    struct RoyaltyInfo {
+        address receiver;
+        uint256 royaltyFraction;
+    }
+
+    @global RoyaltyInfo _defaultRoyaltyInfo;
+    @global map<uint256, RoyaltyInfo> _tokenRoyaltyInfo;
+    /**
+     * @dev The denominator with which to interpret the fee set in {_setTokenRoyalty} and {_setDefaultRoyalty} as a
+     * fraction of the sale price. Defaults to 10000 so fees are expressed in basis points, but may be customized by an
+     * override.
+     */
+    const uint256 FEE_DENOMINATOR = 10000u256;
+
+    @global function on_deploy(address receiver, uint256 royaltyFraction) {
+        _defaultRoyaltyInfo.receiver = receiver;
+        _defaultRoyaltyInfo.royaltyFraction = royaltyFraction;
+    }
+
+    /**
+     * @inheritdoc IERC2981
+     */
+    @global function IERC2981.RoyaltyInfo royaltyInfo(uint256 tokenId, uint256 salePrice) public {
+        IERC2981.RoyaltyInfo royalty;
+        royalty.royaltyAmount = _tokenRoyaltyInfo[tokenId].royaltyFraction;
+        royalty.receiver = _tokenRoyaltyInfo[tokenId].receiver;
+
+        if (royalty.royaltyAmount == 0u256) {
+            royalty.royaltyAmount = _defaultRoyaltyInfo.royaltyFraction;
+            royalty.receiver = _defaultRoyaltyInfo.receiver;
+        }
+
+        uint256 royaltyAmount = (salePrice * royalty.royaltyAmount) / FEE_DENOMINATOR;
+        royalty.royaltyAmount = royaltyAmount;
+
+        return royalty;
+    }
+
+    
+
+    /**
+     * @dev Sets the royalty information that all ids in this contract will default to.
+     *
+     * Requirements:
+     *
+     * - `receiver` cannot be the zero address.
+     * - `feeNumerator` cannot be greater than the fee denominator.
+     */
+    @global function _setDefaultRoyalty(address receiver, uint256 feeNumerator) {
+        // Royalty fee will exceed the sale price
+        __debug.assert(feeNumerator > FEE_DENOMINATOR, "ERC2981InvalidDefaultRoyalty");
+
+        _defaultRoyaltyInfo = RoyaltyInfo(receiver, feeNumerator);
+    }
+
+    /**
+     * @dev Sets the royalty information for a specific token id, overriding the global default.
+     *
+     * Requirements:
+     *
+     * - `receiver` cannot be the zero address.
+     * - `feeNumerator` cannot be greater than the fee denominator.
+     */
+    @global function _setTokenRoyalty(uint256 tokenId, address receiver, uint256 feeNumerator) {
+        if (feeNumerator > FEE_DENOMINATOR) {
+            // Royalty fee will exceed the sale price
+            __debug.assert(feeNumerator > FEE_DENOMINATOR, "ERC2981InvalidTokenRoyalty");
+        }
+
+        _tokenRoyaltyInfo[tokenId] = RoyaltyInfo(receiver, feeNumerator);
+    }
+
+    /**
+     * @dev Resets royalty information for the token id back to the global default.
+     */
+    @global function _resetTokenRoyalty(uint256 tokenId) {
+        _tokenRoyaltyInfo[tokenId].royaltyFraction = 0u256;
+    }
+}

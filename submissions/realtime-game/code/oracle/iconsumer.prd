@@ -1,0 +1,6 @@
+contract IConsumer {
+    interface ConsumerInterface {
+        // transfer amount of tokens to other address
+        @address function announce_feed(bigint amount);
+    }
+}

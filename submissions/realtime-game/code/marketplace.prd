@@ -1,0 +1,107 @@
+import Hero;
+import Item;
+import MobaToken;
+
+// NFT Marketplace
+contract Marketplace {
+    const uint32 MAX_AMOUNT = 5u32;
+    const bigint ROYALTY_FEE = 2ib;
+
+    struct Order {
+        address seller;
+        array<uint256> heroIds;
+        array<uint256> itemIds;
+        bigint price; 
+        uint64 expiredAt;        // until this time
+        bool active;
+    }
+
+    @global address feeCollector;
+    @global uint256 lastOrderId;
+    @global map<uint256, Order> order;
+
+    @global function on_deploy() {
+        feeCollector = __transaction.get_sender();
+    }
+
+    // Sell items
+    @global function sell(array<uint256> heroIds_, array<uint256> itemIds_, bigint price_, uint64 duration_) export {
+        __debug.assert(price_ > bigint(0), "empty price");
+        uint32 itemsAmount = heroIds_.length() + itemIds_.length();
+        __debug.assert(itemsAmount <= MAX_AMOUNT, "exceeds max amount");
+
+        // make sure that the items are owned by the same user.
+        for (uint32 i = 0u32; i < heroIds_.length(); i++) {
+            relay@heroIds_[i] () {
+                __debug.assert(Hero.ownerOf() == __transaction.get_sender(), "not owned");
+                Hero.transfer(__address());
+            }
+        }
+        for (uint32 i = 0u32; i < itemIds_.length(); i++) {
+            relay@itemIds_[i] () {
+                __debug.assert(Item.ownerOf() == __transaction.get_sender(), "not owned");
+                Item.transfer(__address());
+            }
+        }
+
+        lastOrderId++;
+        order[lastOrderId].seller = __transaction.get_sender();
+        order[lastOrderId].heroIds = heroIds_;
+        order[lastOrderId].itemIds = itemIds_;
+        order[lastOrderId].price = price_; 
+        order[lastOrderId].active = true;
+        if (duration_ > 0u64) {
+            order[lastOrderId].expiredAt = duration_ + __transaction.get_timestamp();    // optionally true
+        }
+
+        __debug.print("The user ", __transaction.get_sender(), " created order ", lastOrderId, " for ", price_);
+    }
+
+    // User cancels the order
+    @global function cancel(uint256 orderId) export {
+        __debug.assert(order[orderId].active, "not active");
+        __debug.assert(order[orderId].seller == __transaction.get_sender(), "not authorized");
+
+        for (uint32 i = 0u32; i < order[orderId].heroIds.length(); i++) {
+            relay@order[orderId].heroIds[i] () {
+                Hero.transfer(__transaction.get_sender());
+            }
+        }
+        for (uint32 i = 0u32; i < order[orderId].itemIds.length(); i++) {
+            relay@order[orderId].itemIds[i] () {
+                Item.transfer(__transaction.get_sender());
+            }
+        }
+
+        order[orderId].active = false;
+    }
+
+    // User buys the order
+    @global function buy(uint256 orderId) export {
+        __debug.assert(order[orderId].active, "not active");
+        __debug.assert(order[orderId].seller != __transaction.get_sender(), "can not buy own items");
+        if (order[orderId].expiredAt > 0u64) {
+            __debug.assert(__transaction.get_timestamp() >= order[orderId].expiredAt, "order time out");
+        }
+
+        relay@__transaction.get_sender() (^orderId) {
+            bigint royaltyFee = order[orderId].price / 100ib * ROYALTY_FEE;
+            __debug.assert(MobaToken.balanceOf() >= royaltyFee + order[orderId].price, "not enough tokens");
+            MobaToken.transfer(feeCollector, royaltyFee);
+            MobaToken.transfer(order[orderId].seller, order[orderId].price);
+        } 
+
+        for (uint32 i = 0u32; i < order[orderId].heroIds.length(); i++) {
+            relay@order[orderId].heroIds[i] () {
+                Hero.transfer(__transaction.get_sender());
+            }
+        }
+        for (uint32 i = 0u32; i < order[orderId].itemIds.length(); i++) {
+            relay@order[orderId].itemIds[i] () {
+                Item.transfer(__transaction.get_sender());
+            }
+        }
+
+        order[orderId].active = false;
+    }
+}

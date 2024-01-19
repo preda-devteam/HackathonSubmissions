@@ -1,0 +1,47 @@
+import IConsumer;
+import IPublisher;
+
+// The client needs to call send a request to the oracle.
+// Oracle broadcasts the result to all clients.
+//
+// For testing purpose we create 100 clients.
+// Clients randomly sends a request to the oracle for a price feed.
+// Oracle keeps the stack of each requests.
+// Whenever an admin sends a message, the oracle will send it to all requesters.
+contract PriceFeed implements IPublisher.PublisherInterface {
+    @global array<address> requesters;
+    @global map<address, uint64> registered;
+
+    // Called by the admin
+    @global function announce(bigint price) public export {
+        if (requesters.length() == uint32(0)) {
+            return;
+        }
+
+        while (requesters.length() > uint32(0)) {
+            address to = requesters[uint32(0)];
+            
+            __debug.assert(registered.has(to));
+
+            relay@to (bigint price = price, uint64 cid = registered[to]) {
+                IConsumer.ConsumerInterface c = IConsumer.ConsumerInterface(cid);
+                c.announce_feed(price);
+            }
+            requesters.pop();
+        }
+    }
+
+    @global function register(uint64 cid, address requester) public {
+        __debug.assert(cid > uint64(0));
+        __debug.assert(registered.has(requester) == false);
+
+        registered[requester] = cid;
+    }
+
+    @global function request_price(address requester) public {
+        __debug.assert(registered.has(requester));
+
+        requesters.push(requester);
+    }
+
+}

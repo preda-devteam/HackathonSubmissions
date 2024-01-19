@@ -1,0 +1,210 @@
+import Hero;
+import Item;
+import MobaToken;
+
+contract Moba {
+    const uint64 PREPARE_TIME = 300u64;
+    const uint256 HERO_IMPORT_PRICE = 1u256;
+    const uint256 ITEM_IMPORT_PRICE = 1u256;
+
+    struct Session {
+        array<address> sedentaries;
+        array<address> nomads;
+        uint64 start;
+        uint64 end;
+
+        array<uint256> sedentaryHeroes;
+        array<uint256> nomadHeroes;
+
+        array<uint256> sedentaryItems;
+        array<uint256> nomadItems;
+
+        bool sedentaryWon;
+    }
+    
+    @global address master;
+    @global uint256 lastSessionId;
+
+    @uint256 Session session;
+    @uint256 map<uint256, address> heroOwners;
+    @uint256 map<uint256, address> itemOwners;
+
+    @global function on_deploy() {
+        master = __transaction.get_sender();
+    }
+
+    @global function create_session(array<address> sedentaries_, array<address> nomads_) export {
+        __debug.assert(master == __transaction.get_sender(), "not master");
+        __debug.assert(sedentaries_.length() == 5u32, "not enough sedentaries");
+        __debug.assert(nomads_.length() == 5u32, "not enough nomads");
+
+        lastSessionId++;
+
+        relay@lastSessionId (^sedentaries_, ^nomads_) {
+            session.sedentaries = sedentaries_;
+            session.nomads = nomads_;
+            session.start = __transaction.get_timestamp();
+
+            __debug.print("Session begin: ", lastSessionId);
+        }
+    }
+
+    @address function createSessionByTest(array<address> sedentaries_, array<address> nomads_) export {
+        relay@global create_session(sedentaries_, nomads_);
+    }
+
+    @uint256 function import_hero(uint256 heroId) export {
+        __debug.assert(__transaction.get_timestamp() > session.start && __transaction.get_timestamp() <= session.start + PREPARE_TIME, "timeout");
+        relay@heroId () {
+            __debug.assert(Hero.ownerOf() == __transaction.get_sender(), "not your hero");
+        }
+        __debug.assert(session.end == 0u64, "session end");
+
+        bool is_sedentary = false;
+        for (uint32 i = 0u32; i < 5u32; i++) {
+            if (__transaction.get_sender() == session.sedentaries[i]) {
+                is_sedentary = true;
+                break;
+            }
+        }
+
+        bool is_nomad = false;
+        for (uint32 i = 0u32; i < 5u32; i++) {
+            if (__transaction.get_sender() == session.nomads[i]) {
+                is_nomad = true;
+                break;
+            }
+        }
+
+        __debug.assert(is_nomad || is_sedentary, "not authorized");
+
+        relay@__transaction.get_sender() () {
+            MobaToken.transfer(master, bigint(HERO_IMPORT_PRICE));
+        } 
+
+        relay@heroId () {
+            Hero.transfer(__address());
+        }
+
+        if (is_sedentary) {
+            session.sedentaryHeroes.push(heroId);
+        } else {
+            session.nomadHeroes.push(heroId);
+        }
+        heroOwners[heroId] = __transaction.get_sender();
+    }
+
+    @uint256 function import_item(uint256 itemId) export {
+        // __debug.assert(__transaction.get_timestamp() > session.start && __transaction.get_timestamp() <= session.start + PREPARE_TIME, "timeout");
+        relay@itemId () {
+            __debug.assert(Item.ownerOf() == __transaction.get_sender(), "not your hero");
+        }
+        __debug.assert(session.end == 0u64, "session end");
+
+        bool is_sedentary = false;
+        for (uint32 i = 0u32; i < 5u32; i++) {
+            if (__transaction.get_sender() == session.sedentaries[i]) {
+                is_sedentary = true;
+                break;
+            }
+        }
+
+        bool is_nomad = false;
+        for (uint32 i = 0u32; i < 5u32; i++) {
+            if (__transaction.get_sender() == session.nomads[i]) {
+                is_nomad = true;
+                break;
+            }
+        }
+
+        __debug.assert(is_nomad || is_sedentary, "not authorized");
+
+        relay@__transaction.get_sender() () {
+            MobaToken.transfer(master, bigint(ITEM_IMPORT_PRICE));
+        } 
+
+        relay@itemId () {
+            Item.transfer(__address());
+        }
+        if (is_sedentary) {
+            session.sedentaryItems.push(itemId);
+        } else {
+            session.nomadItems.push(itemId);
+        }
+
+        itemOwners[itemId] = __transaction.get_sender();
+    }
+
+    @uint256 function session_end(bool sedentaryWon_) export {
+        __debug.assert(session.end == 0u64, "session end");
+        __debug.assert(master == __transaction.get_sender(), "not master");
+
+        // disable for the test
+        // __debug.assert(__transaction.get_timestamp() > session.start + PREPARE_TIME, "timeout");
+
+        session.end = __transaction.get_timestamp();
+        session.sedentaryWon = sedentaryWon_;
+
+        while (session.sedentaryHeroes.length() > uint32(0)) {
+            uint256 heroId = session.sedentaryHeroes[uint32(0)];
+
+            address to = heroOwners[heroId];
+
+            relay@heroId (^to, ^sedentaryWon_) {
+                Hero.transferFromGame(to, sedentaryWon_);
+            }
+            session.sedentaryHeroes.pop();
+        }
+
+        while (session.nomadHeroes.length() > uint32(0)) {
+            uint256 heroId = session.nomadHeroes[uint32(0)];
+
+            address to = heroOwners[heroId];
+
+            relay@heroId (^to, ^sedentaryWon_) {
+                Hero.transferFromGame(to, !sedentaryWon_);
+            }
+            session.nomadHeroes.pop();
+        }
+
+        while (session.sedentaryItems.length() > uint32(0)) {
+            uint256 itemId = session.sedentaryItems[uint32(0)];
+
+            address to = itemOwners[itemId];
+
+            relay@itemId (^to, ^sedentaryWon_) {
+                Item.transferFromGame(to, sedentaryWon_);
+            }
+            session.sedentaryItems.pop();
+        }
+
+        while (session.nomadItems.length() > uint32(0)) {
+            uint256 itemId = session.nomadItems[uint32(0)];
+
+            address to = itemOwners[itemId];
+
+            relay@itemId (^to, ^sedentaryWon_) {
+                Item.transferFromGame(to, !sedentaryWon_);
+            }
+            session.nomadItems.pop();
+        }
+    }
+
+    @address function importHeroByTest(uint256 heroId_, uint256 sessionId_) export {
+        relay@sessionId_ import_hero(heroId_);
+    }
+
+    @address function importItemByTest(uint256 itemId_, uint256 sessionId_) export {
+        relay@sessionId_ import_item(itemId_);
+    }
+
+    @address function endSessionByTest(bool sedentaryWon_, uint256 sessionId_) export {
+        relay@sessionId_ session_end(sedentaryWon_);
+    }
+
+    @address function sessionInfo(uint256 sessionId_) export const {
+        relay@sessionId_ () {
+            __debug.print("Session info ", session);
+        }
+    }
+}

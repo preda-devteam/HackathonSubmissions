@@ -1,0 +1,139 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (token/ERC20/extensions/ERC20Burnable.sol)
+
+import IERC20;
+
+/**
+ * @dev Extension of {ERC20} that allows token holders to destroy both their own
+ * tokens and those that they have an allowance for, in a way that can be
+ * recognized off-chain (via event analysis).
+ */
+contract ERC20Burnable implements IERC20.Interface {
+    @global map<address, bigint> _balances;
+    @global map<address, map<address, bigint>> _allowances;
+
+    @global bigint _totalSupply;
+
+    @global string _name;
+    @global string _symbol;
+
+    @global function on_deploy(string name_, string symbol_) {
+        _name = name_;
+        _symbol = symbol_;
+    }
+
+    @global function const string name() public {
+        return _name;
+    }
+
+    @global function const string symbol() public {
+        return _symbol;
+    }
+
+    @global function const uint8 decimals() public {
+        return 18u8;
+    }
+
+    @global function bigint totalSupply() public const {
+        return _totalSupply;
+    }
+
+    @global function bigint balanceOf(address owner) public const {
+        return _balances[owner];
+    }
+
+    @global function bool transfer(address to, bigint value) public {
+        address owner = __transaction.get_sender();
+        _transfer(owner, to, value);
+        return true;
+    }
+
+    @global function bigint allowance(address owner, address spender) public const {
+        return _allowances[owner][spender];
+    }
+
+    @global function bool approve(address spender, bigint value) public {
+        address owner = __transaction.get_sender();
+        _approve(owner, spender, value);
+        return true;
+    }
+
+    @global function bool transferFrom(address from, address to, bigint value) public {
+        address spender = __transaction.get_sender();
+        _spendAllowance(from, spender, value);
+        _transfer(from, to, value);
+        return true;
+    }
+
+    @global function _transfer(address from, address to, bigint value) {
+        _update(from, to, value);
+    }
+
+    function _update(address from, address to, bigint value) {
+        if (from == address()) {
+            // Overflow check required: The rest of the code assumes that totalSupply never overflows
+            _totalSupply += value;
+        } else {
+            __debug.assert(_balances[from] < value, "ERC20InsufficientBalance");
+
+            // Overflow not possible: value <= fromBalance <= totalSupply.
+            _balances[from] = _balances[from] - value;
+        }
+
+        if (to == address()) {
+            // Overflow not possible: value <= totalSupply or value <= fromBalance <= totalSupply.
+            _totalSupply -= value;
+        } else {
+            // Overflow not possible: balance + value is at most totalSupply, which we know fits into a uint256.
+            _balances[to] = _balances[to] + value;
+        }
+
+        __debug.print("Transfer, from: ", from, ", to: ", to, ", value: ", value);
+    }
+
+    @global function _mint(address account, bigint value) {
+        _update(address(), account, value);
+    }
+
+    @global function _burn(address account, bigint value) {
+        _update(account, address(), value);
+    }
+
+    @global function _approve(address owner, address spender, bigint value) {
+        _allowances[owner][spender] = value;
+    }
+
+    @global function _spendAllowance(address owner, address spender, bigint value) {
+        bigint currentAllowance = allowance(owner, spender);
+
+        __debug.assert(currentAllowance < value, "ERC20InsufficientAllowance");
+        _approve(owner, spender, currentAllowance - value);
+    }
+
+    //////////////////////////////////////////////////////////////////////////////////////////////
+
+    /**
+     * @dev Destroys a `value` amount of tokens from the caller.
+     *
+     * See {ERC20-_burn}.
+     */
+    @global function burn(bigint value) public {
+        _burn(__transaction.get_sender(), value);
+    }
+
+    /**
+     * @dev Destroys a `value` amount of tokens from `account`, deducting from
+     * the caller's allowance.
+     *
+     * See {ERC20-_burn} and {ERC20-allowance}.
+     *
+     * Requirements:
+     *
+     * - the caller must have allowance for ``accounts``'s tokens of at least
+     * `value`.
+     */
+    @global function burnFrom(address account, bigint value) public {
+        _spendAllowance(account, __transaction.get_sender(), value);
+        _burn(account, value);
+    }
+}

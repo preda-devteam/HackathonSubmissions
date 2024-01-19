@@ -1,0 +1,187 @@
+// SPDX-License-Identifier: MIT
+// OpenZeppelin Contracts (last updated v5.0.0) (access/AccessControl.sol)
+// Set "./IAccessControl.prd" in the Compile arguments
+
+import IAccessControl;
+
+/**
+ * @dev Contract module that allows children to implement role-based access
+ * control mechanisms. This is a lightweight version that doesn't allow enumerating role
+ * members except through off-chain means by accessing the contract event logs. Some
+ * applications may benefit from on-chain enumerability, for those cases see
+ * {AccessControlEnumerable}.
+ *
+ * Roles are referred to by their `bytes32` identifier. These should be exposed
+ * in the external API and be unique. The best way to achieve this is by
+ * using `public constant` hash digests:
+ *
+ * ```solidity
+ * bytes32 public constant MY_ROLE = keccak256("MY_ROLE");
+ * ```
+ *
+ * Roles can be used to represent a set of permissions. To restrict access to a
+ * function call, use {hasRole}:
+ *
+ * ```solidity
+ * function foo() public {
+ *     require(hasRole(MY_ROLE, msg.sender));
+ *     ...
+ * }
+ * ```
+ *
+ * Roles can be granted and revoked dynamically via the {grantRole} and
+ * {revokeRole} functions. Each role has an associated admin role, and only
+ * accounts that have a role's admin role can call {grantRole} and {revokeRole}.
+ *
+ * By default, the admin role for all roles is `DEFAULT_ADMIN_ROLE`, which means
+ * that only accounts with this role will be able to grant or revoke other
+ * roles. More complex role relationships can be created by using
+ * {_setRoleAdmin}.
+ *
+ * WARNING: The `DEFAULT_ADMIN_ROLE` is also its own admin: it has permission to
+ * grant and revoke this role. Extra precautions should be taken to secure
+ * accounts that have been granted it. We recommend using {AccessControlDefaultAdminRules}
+ * to enforce additional security measures for this role.
+ */
+contract AccessControl implements IAccessControl.AccessControl {
+    struct RoleData {
+        map<address, bool> hasRole;
+        uint256 adminRole;
+    }
+
+    @address map<uint256, RoleData> _roles;
+
+    const uint256 DEFAULT_ADMIN_ROLE = 0x00u256;
+
+    /**
+     * @dev Modifier that checks that an account has a specific role. Reverts
+     * with an {AccessControlUnauthorizedAccount} error including the required role.
+     */
+    @address function onlyRole(uint256 role) const {
+        _checkRole(role, __transaction.get_sender());
+    }
+
+    /**
+     * @dev Returns `true` if `account` has been granted `role`.
+     */
+    @address function bool hasRole(uint256 role, address account) public const {
+        return _roles[role].hasRole[account];
+    }
+
+    /**
+     * @dev Reverts with an {AccessControlUnauthorizedAccount} error if `account`
+     * is missing `role`. Overriding this function changes the behavior of the {onlyRole} modifier.
+     */
+    @address function _checkRole(uint256 role, address account) const {
+        __debug.assert(hasRole(role, account), "AccessControlUnauthorizedAccount");
+    }
+
+    /**
+     * @dev Returns the admin role that controls `role`. See {grantRole} and
+     * {revokeRole}.
+     *
+     * To change a role's admin, use {_setRoleAdmin}.
+     */
+    @address function uint256 getRoleAdmin(uint256 role) public const {
+        return _roles[role].adminRole;
+    }
+
+    /**
+     * @dev Grants `role` to `account`.
+     *
+     * If `account` had not been already granted `role`, emits a {RoleGranted}
+     * event.
+     *
+     * Requirements:
+     *
+     * - the caller must have ``role``'s admin role.
+     *
+     * May emit a {RoleGranted} event.
+     */
+    @address function grantRole(uint256 role, address account) public {
+        onlyRole(getRoleAdmin(role));
+        _grantRole(role, account);
+    }
+
+    /**
+     * @dev Revokes `role` from `account`.
+     *
+     * If `account` had been granted `role`, emits a {RoleRevoked} event.
+     *
+     * Requirements:
+     *
+     * - the caller must have ``role``'s admin role.
+     *
+     * May emit a {RoleRevoked} event.
+     */
+    @address function revokeRole(uint256 role, address account) public {
+        onlyRole(getRoleAdmin(role));
+        _revokeRole(role, account);
+    }
+
+    /**
+     * @dev Revokes `role` from the calling account.
+     *
+     * Roles are often managed via {grantRole} and {revokeRole}: this function's
+     * purpose is to provide a mechanism for accounts to lose their privileges
+     * if they are compromised (such as when a trusted device is misplaced).
+     *
+     * If the calling account had been revoked `role`, emits a {RoleRevoked}
+     * event.
+     *
+     * Requirements:
+     *
+     * - the caller must be `callerConfirmation`.
+     *
+     * May emit a {RoleRevoked} event.
+     */
+    @address function renounceRole(uint256 role, address callerConfirmation) public {
+        __debug.assert(callerConfirmation == __transaction.get_sender(), "AccessControlBadConfirmation");
+
+        _revokeRole(role, callerConfirmation);
+    }
+
+    /**
+     * @dev Sets `adminRole` as ``role``'s admin role.
+     *
+     * Emits a {RoleAdminChanged} event.
+     */
+    @address function _setRoleAdmin(uint256 role, uint256 adminRole) {
+        uint256 previousAdminRole = getRoleAdmin(role);
+        _roles[role].adminRole = adminRole;
+        __debug.print("RoleAdminChanged, role: ", role, "previousAdminRole: ", previousAdminRole, "adminRole: ", adminRole);
+    }
+
+    /**
+     * @dev Attempts to grant `role` to `account` and returns a boolean indicating if `role` was granted.
+     *
+     * Internal function without access restriction.
+     *
+     * May emit a {RoleGranted} event.
+     */
+    @address function bool _grantRole(uint256 role, address account) {
+        if (!hasRole(role, account)) {
+            _roles[role].hasRole[account] = true;
+            __debug.print("RoleGranted, role: ", role, "account: ", account, "to: ", __transaction.get_sender());
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @dev Attempts to revoke `role` to `account` and returns a boolean indicating if `role` was revoked.
+     *
+     * Internal function without access restriction.
+     *
+     * May emit a {RoleRevoked} event.
+     */
+    @address function bool _revokeRole(uint256 role, address account) {
+        if (hasRole(role, account)) {
+            _roles[role].hasRole[account] = false;
+            __debug.print("RoleRevoked, role: ", role, " account: ", account, " for: ", __transaction.get_sender());
+            return true;
+        }
+
+        return false;
+    }
+}

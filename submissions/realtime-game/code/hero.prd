@@ -1,0 +1,241 @@
+import MobaToken;
+import Item;
+
+contract Hero {
+    const uint16 INITIAL_STATS_POINTS = 100u16;
+    // 100 for range, and 100 for each stat
+    const uint16 INITIAL_PARAMS_POINTS = 400u16;
+    const uint256 ITEM_PRICE = 500u256;
+    const uint256 ULTIMATE_ITEM_PRICE = 3000u256;
+
+    struct Stats {
+        uint16 intelligence;
+        uint16 agility;
+        uint16 strength;
+        // Mp, MpRecovery, magicalDefense
+        array<uint16> intelligenceRatio;
+        // Attack, AttackSpeed, Speed 
+        array<uint16> agilityRatio;
+        // Hp, HpRecovery, Defense
+        array<uint16> strengthRatio;
+    }
+
+    struct Params {
+        uint16 AttackRange;     // required
+
+        // strength derived
+        uint16 Hp;              // health point, required
+        uint16 HpRecovery;      
+        uint16 Defense;         
+
+        // agility derived
+        uint16 Attack;          // required
+        uint16 AttackSpeed;     // required
+        uint16 Speed;           // required
+        
+        // intelligence
+        uint16 Mp;              // mana point, required
+        uint16 MpRecovery;
+        uint16 Magicaldefense;
+    }
+
+    struct Meta {
+        string name;
+        string desc;
+        array<uint256> items;  // four items available only
+        address author;
+        address owner;
+    }
+
+    struct HeroData {
+        uint256 id;
+        address owner;
+        map<address, uint256> games;
+        map<address, uint256> wins;
+    }
+
+    // The global parameters of this nft
+    @global string name;
+    @global string desc;
+    @global uint256 lastId;
+    @global address studio;     // game studio that gets royalty fee
+
+    @global map<uint256, Meta> metaOf;
+    @global map<uint256, Params> paramsOf;
+    @global map<uint256, Stats> statsOf;
+
+    @uint256 HeroData dataOf;
+
+    @global map<hash, bool> uniqueNames;
+
+    @global function on_deploy () {
+        name = "Hero";
+        desc = "The MOBA hero loved by everyone";
+        studio = __transaction.get_sender();
+    }
+
+    // Create a new hero
+    // Todo: add a fee
+    @global function mint(
+        uint16 attackRange_,
+        string name_,
+        string desc_,
+        Stats stats_,
+        array<uint256> items_
+        ) export {
+        // first, verify the meta
+        __debug.assert(name_.length() > 0u16, "empty name");
+        __debug.assert(!uniqueNames.has(hash(name_)), "defined name");
+       
+        __debug.assert(items_.length() == 4u, "not enough items");
+
+        for (uint32 i = 0u; i < 3u32; i++) {
+            uint256 itemPrice = Item.itemPrice(items_[i]);
+            __debug.assert(itemPrice == ITEM_PRICE, "not valid item");
+            relay@items_[i] () {
+            __debug.assert(Item.ownerOf() == __transaction.get_sender(), "not your item");
+        }
+        }
+        uint256 itemPrice = Item.itemPrice(items_[3u]);
+        __debug.assert(itemPrice == ULTIMATE_ITEM_PRICE, "not valid item");
+
+        relay@items_[3u] () {
+            __debug.assert(Item.ownerOf() == __transaction.get_sender(), "not your item");
+        }
+
+        // todo verify that items are owned by the same user.
+
+
+        lastId += 1u256;
+
+        // second make sure that stats and params are fair.
+        __debug.assert(stats_.intelligence > 0u16 && stats_.agility > 0u16 && stats_.strength > 0u16, "0 stat");
+
+        uint16 totalStat = stats_.intelligence + stats_.agility + stats_.strength;
+        __debug.assert(totalStat == INITIAL_STATS_POINTS, "not balanced stats");
+
+        __debug.assert(stats_.intelligenceRatio.length() == 3u32, "need 3 intelligence ratio elements");
+        __debug.assert(stats_.agilityRatio.length() == 3u32, "need 3 agility ratio elements");
+        __debug.assert(stats_.strengthRatio.length() == 3u32, "need 3 strength ratio elements");
+        __debug.assert(stats_.intelligenceRatio[0u32] + 
+                stats_.intelligenceRatio[1u32] + 
+                stats_.intelligenceRatio[2u32] == 100u16, "invalid intelligence ratio");
+        __debug.assert(stats_.agilityRatio[0u32] + 
+                stats_.agilityRatio[1u32] + 
+                stats_.agilityRatio[2u32] == 100u16, "invalid agility ratio");
+        __debug.assert(stats_.strengthRatio[0u32] + 
+                stats_.strengthRatio[1u32] + 
+                stats_.strengthRatio[2u32] == 100u16, "invalid strength ratio");
+
+        // All heroes require attack, movement, health and mana point        
+        __debug.assert(stats_.strengthRatio[0u32] > 0u16, "0 hp");
+        __debug.assert(stats_.agilityRatio[0u32] > 0u16, "0 attack");
+        __debug.assert(stats_.agilityRatio[1u32] > 0u16, "0 attack speed");
+        __debug.assert(stats_.agilityRatio[2u32] > 0u16, "0 speed");
+        __debug.assert(stats_.intelligenceRatio[0u32] > 0u16, "0 mp");
+
+        __debug.assert(attackRange_ > 0u16 && attackRange_ < INITIAL_PARAMS_POINTS - 3u16, "invalid attack range");
+
+        relay@__transaction.get_sender() () {
+            bigint price = bigint(INITIAL_STATS_POINTS + INITIAL_PARAMS_POINTS);
+            price *= bigint(ITEM_PRICE * 3u256) + bigint(ULTIMATE_ITEM_PRICE);
+            MobaToken.transfer(studio, price);
+        } 
+
+        Params params;
+        params.AttackRange = attackRange_;
+
+        uint16 statPoints = (INITIAL_PARAMS_POINTS - attackRange_);
+
+        // We divide the number by initial stat points, to use it in the percentage wise.
+        // Assume, stat points is 360. and intelligence is 80 percent of 360.
+        // Since blockchain doesn't compare we can't get 1% as 3.5 and multiply it by 80.
+        // But, 360 * 80 / 100 == 3.6 * 80
+        uint16 intelligencePoints =  statPoints * stats_.intelligence / INITIAL_STATS_POINTS;
+        uint16 agilityPoints =  statPoints * stats_.agility / INITIAL_STATS_POINTS;
+        uint16 strengthPoints =  statPoints * stats_.strength / INITIAL_STATS_POINTS;
+
+        params.Mp = intelligencePoints * stats_.intelligenceRatio[0u32] / 100u16;
+        if (stats_.intelligenceRatio[1u32] > 0u16) {
+            params.MpRecovery = intelligencePoints * stats_.intelligenceRatio[1u32] / 100u16;
+        }
+        if (stats_.intelligenceRatio[2u32] > 0u16) {
+            params.Magicaldefense = intelligencePoints * stats_.intelligenceRatio[2u32] / 100u16;
+        }
+
+        params.Attack = agilityPoints * stats_.agilityRatio[0u32] / 100u16;
+        params.AttackSpeed = agilityPoints * stats_.agilityRatio[1u32] / 100u16;
+        params.Speed = agilityPoints * stats_.agilityRatio[2u32] / 100u16;
+
+        params.Hp = strengthPoints * stats_.strengthRatio[0u32] / 100u16;
+        if (stats_.strengthRatio[1u32] > 0u16) {
+            params.HpRecovery = strengthPoints * stats_.strengthRatio[1u32] / 100u16;
+        }
+        if (stats_.strengthRatio[2u32] > 0u16) {
+            params.Defense = strengthPoints * stats_.strengthRatio[2u32] / 100u16;
+        }
+
+        // make sure there is no such kind of hero by stats
+        // todo: add the 3d model
+
+        // save the parameters
+        uniqueNames[hash(name_)] = true;
+        Meta meta;
+        meta.name = name_;
+        meta.desc = desc_;
+        meta.author = __transaction.get_sender();
+
+        metaOf[lastId] = meta;
+        statsOf[lastId] = stats_;
+        paramsOf[lastId] = params;
+
+        relay@lastId () {
+            dataOf.id = lastId;
+            dataOf.owner = __transaction.get_sender();
+        }
+
+        __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
+    }
+
+    @address function mintByTest(
+        string name_,
+        string desc_,
+        array<uint256> items_,
+        uint256 heroId_
+        ) export {
+        // first, verify the meta
+        __debug.assert(name_.length() > 0u16, "empty name");
+       
+        __debug.assert(items_.length() == 4u, "not enough items");
+
+        relay@heroId_ (^heroId_) {
+            dataOf.id = heroId_;
+            dataOf.owner = __transaction.get_sender();
+        }
+
+        __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
+    }
+
+    @uint256 function transfer(address to) public {
+        __debug.assert(dataOf.owner == __transaction.get_sender() || dataOf.owner == __transaction.get_initiator_address(), "not owner");
+        dataOf.owner = to;
+
+        __debug.print("NFT ", dataOf.id, " was transferred from ", __transaction.get_sender(), " to ", to);
+    }
+
+    @uint256 function transferFromGame(address to, bool won) public {
+    __debug.assert(dataOf.owner == __transaction.get_sender(), "not owner");
+        dataOf.owner = to;
+        dataOf.games[__transaction.get_sender()]++;
+        if (won) {
+            dataOf.wins[__transaction.get_sender()]++;
+        }
+
+        __debug.print("NFT ", dataOf.id, " was transferred from ", __transaction.get_sender(), " to ", to);
+        
+    }
+
+    @uint256 function const address ownerOf() public const {
+        return dataOf.owner;
+    }
+}
