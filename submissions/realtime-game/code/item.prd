@@ -333,7 +333,7 @@ contract Item {
     @global function mint(
         array<Utility> utilities_,
         string name_,
-        string desc_) public {
+        string desc_) public export {
         // first, verify the meta
         __debug.assert(name_.length() > 0u16, "empty name");
         __debug.assert(!uniqueNames.has(hash(name_)), "defined name");
