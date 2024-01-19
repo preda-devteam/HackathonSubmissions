@@ -1,7 +1,8 @@
 {
-  "token.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd",
-  "item.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd",
-  "hero.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd,./item.prd",
-  "moba.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd,./item.prd,./hero.prd",
-  "marketplace.prd": "./lib/IFungibleToken.prd,./lib/FungibleToken.prd,./token.prd,./item.prd,./hero.prd"
+  "MobaToken.prd": "./IFungibleToken.prd,./FungibleToken.prd",
+  "item.prd": "./IFungibleToken.prd,./FungibleToken.prd,./MobaToken.prd",
+  "hero.prd": "./IFungibleToken.prd,./FungibleToken.prd,./MobaToken.prd,./item.prd",
+  "moba.prd": "./IFungibleToken.prd,./FungibleToken.prd,./MobaToken.prd,./item.prd,./hero.prd",
+  "marketplace.prd": "./IFungibleToken.prd,./FungibleToken.prd,./MobaToken.prd,./item.prd,./hero.prd",
+  "moba.prdts": "-count:100"
 }
