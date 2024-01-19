@@ -79,7 +79,7 @@ contract Moba {
         } 
 
         relay@heroId () {
-            Hero.transfer(master);
+            Hero.transfer(__address());
         }
 
         if (is_sedentary) {
@@ -120,7 +120,7 @@ contract Moba {
         } 
 
         relay@itemId () {
-            Item.transfer(master);
+            Item.transfer(__address());
         }
         if (is_sedentary) {
             session.sedentaryItems.push(itemId);
