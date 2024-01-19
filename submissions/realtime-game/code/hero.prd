@@ -197,6 +197,25 @@ contract Hero {
         __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
     }
 
+    @address function mintByTest(
+        string name_,
+        string desc_,
+        array<uint256> items_,
+        uint256 heroId_
+        ) export {
+        // first, verify the meta
+        __debug.assert(name_.length() > 0u16, "empty name");
+       
+        __debug.assert(items_.length() == 4u, "not enough items");
+
+        relay@heroId_ (^heroId_) {
+            dataOf.id = heroId_;
+            dataOf.owner = __transaction.get_sender();
+        }
+
+        __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
+    }
+
     @uint256 function transfer(address to) public {
         __debug.assert(dataOf.owner == __transaction.get_sender() || dataOf.owner == __transaction.get_initiator_address(), "not owner");
         dataOf.owner = to;

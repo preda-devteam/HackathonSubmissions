@@ -377,7 +377,15 @@ contract Item {
         __debug.print("Minted nft ", lastId, " as name '", name_, "', by ", __transaction.get_sender());
     }
 
-    @uint256 function transfer(address to) public {
+    // Testing
+    @address function mintByTest(string name_, string desc_, uint256 itemId_) public export {
+        relay@itemId_ (^name_, ^desc_, ^itemId_) {
+            dataOf.owner = __transaction.get_sender();
+            dataOf.id = itemId_;
+        }
+    }
+
+    @uint256 function transfer(address to) public export {
         __debug.assert(dataOf.owner == __transaction.get_sender() || dataOf.owner == __transaction.get_initiator_address(), "not owner");
         dataOf.owner = to;
 

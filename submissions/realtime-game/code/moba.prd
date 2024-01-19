@@ -49,7 +49,11 @@ contract Moba {
         }
     }
 
-    @uint256 function import_hero(uint256 heroId) public {
+    @address function createSessionByTest(array<address> sedentaries_, array<address> nomads_) export {
+        relay@global create_session(sedentaries_, nomads_);
+    }
+
+    @uint256 function import_hero(uint256 heroId) export {
         __debug.assert(__transaction.get_timestamp() > session.start && __transaction.get_timestamp() <= session.start + PREPARE_TIME, "timeout");
         relay@heroId () {
             __debug.assert(Hero.ownerOf() == __transaction.get_sender(), "not your hero");
@@ -183,6 +187,24 @@ contract Moba {
                 Item.transferFromGame(to, !sedentaryWon_);
             }
             session.nomadItems.pop();
+        }
+    }
+
+    @address function importHeroByTest(uint256 heroId_, uint256 sessionId_) export {
+        relay@sessionId_ import_hero(heroId_);
+    }
+
+    @address function importItemByTest(uint256 itemId_, uint256 sessionId_) export {
+        relay@sessionId_ import_item(itemId_);
+    }
+
+    @address function endSessionByTest(bool sedentaryWon_, uint256 sessionId_) export {
+        relay@sessionId_ session_end(sedentaryWon_);
+    }
+
+    @address function sessionInfo(uint256 sessionId_) export const {
+        relay@sessionId_ () {
+            __debug.print("Session info ", session);
         }
     }
 }
