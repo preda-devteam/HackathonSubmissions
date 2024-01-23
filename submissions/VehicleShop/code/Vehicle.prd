@@ -1,0 +1,39 @@
+import Service;
+
+contract Vehicle {
+    struct Data {
+        address chassisNumber;
+        string brand;
+        string model;
+        bool isNew;
+    }
+
+    @address Data vehicle;
+    @shard array<Service.Data> services;
+
+    @address function Data create(string brand, string model, uint8 isNew) public {
+        vehicle.chassisNumber = __transaction.get_self_address();
+        vehicle.brand = brand;
+        vehicle.model = model;
+        vehicle.isNew = isNew != 0u;
+        Service.addToHistory("createVehicle");
+        return vehicle;
+    }
+
+    @shard function addService(address chassisNumber) export {
+        relay@chassisNumber (^chassisNumber) {
+            if (vehicle.chassisNumber == chassisNumber) {
+                Service.Data service;
+                service.failed = __block.get_timestamp() % 0x02u == 0u;
+                service.timestamp = __block.get_timestamp();
+                services.push(service);
+                Service.addToHistory("addService");
+                __debug.print("Vehicle.addService: (", vehicle.chassisNumber, "): ", vehicle);
+            }
+        }
+    }
+
+    @address function printServices() export {
+        __debug.print("Services: ", services);
+    }
+}

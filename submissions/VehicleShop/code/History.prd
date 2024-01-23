@@ -1,0 +1,25 @@
+contract History {
+    interface IHistory {
+        @address function add(string functionName);
+        @address function addToHistory(string functionName);
+    }
+
+    struct Data {
+        string functionName;
+        uint64 timestamp;
+    }
+
+    @address array<Data> histories;
+
+    @address function array<Data> get() export {
+        __debug.print("Get history: ", histories);
+        return histories;
+    }
+
+    @address function add(string functionName) public {
+        Data history;
+        history.functionName = functionName;
+        history.timestamp = __block.get_timestamp();
+        histories.push(history);
+    }
+}

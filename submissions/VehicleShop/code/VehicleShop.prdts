@@ -1,0 +1,33 @@
+random.reseed
+allocate.address 1
+chain.gaslimit 256
+
+chain.deploy @0 History.prd
+chain.deploy @1 Service.prd
+chain.deploy @2 Vehicle.prd
+chain.deploy @3 VehicleShop.prd
+
+state.set global.VehicleShop { name: "$~vehicleShopName$" }
+VehicleShop.printName {}
+chain.run
+
+VehicleShop.addVehicle @1 { brand: "Kia", model: "Proceed", isNew: $random(0,1)$ }
+VehicleShop.addVehicle @2 { brand: "Ford", model: "Mustang", isNew: $random(0,1)$ }
+VehicleShop.addVehicle @3 { brand: "Mercedes Benz", model: "S Class", isNew: $random(0,1)$ }
+
+stopwatch.restart
+chain.run
+txn2[] = Vehicle.addService*2 #all { chassisNumber: "$@all$" }
+chain.run
+Vehicle.printServices @all {}
+chain.run
+History.get @all {}
+chain.run
+stopwatch.report
+
+chain.info 
+
+viz.addr @all
+viz.txn txn2
+viz.section Finalize
+viz.profiling

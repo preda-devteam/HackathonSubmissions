@@ -1,0 +1,17 @@
+import Vehicle;
+
+contract VehicleShop {
+    @global string name;
+
+    @address map<address, Vehicle.Data> vehicles;
+
+    @global function printName() export {
+        __debug.print("Vehicle shop: ", name);
+    }
+
+    @address function addVehicle(string brand, string model, uint8 isNew) export {
+        Vehicle.Data vehicle = Vehicle.create(brand, model, isNew);
+        vehicles[vehicle.chassisNumber] = vehicle;
+        __debug.print("VehicleShop.addVehicle: (", vehicle.chassisNumber, "): ", vehicle);
+    }
+}

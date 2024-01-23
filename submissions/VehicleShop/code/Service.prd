@@ -1,0 +1,31 @@
+import History;
+
+contract Service implements History.IHistory {
+    struct Data {
+        bool failed;
+        uint64 timestamp;
+    }
+
+    @global History.IHistory history;
+
+    @global function on_deploy() {
+        history = History.IHistory(__id());
+    }
+
+    @address function add(string functionName) public {
+        History.add(functionName);
+    }
+    
+    @address function addToHistory(string functionName) public {
+        // /**************************************************************
+        //  ********       COMMENTED CODE BELLOW WORKS THE        ********  
+        //  ******** (JUST FOR TESTING DIFFERENT CASES/SOLUTIONS) ********
+        //  **************************************************************/
+        // History.add(functionName);
+        relay@global (address addr = __transaction.get_self_address(), ^functionName) {
+            relay@addr (auto historyInstance = history, ^functionName) {
+                historyInstance.add(functionName);
+            }
+        }
+    }
+}
