@@ -1,0 +1,6 @@
+{
+  "Vehicle.prd": "./Service.prd,./History.prd",
+  "VehicleShop.prd": "./Vehicle.prd,./Service.prd,./History.prd",
+  "VehicleShop.prdts": "-vehicleShopName:\"Vehicle Dealership Slovenia\"",
+  "Service.prd": "./History.prd"
+}
