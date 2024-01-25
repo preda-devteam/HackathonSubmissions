@@ -1,0 +1,125 @@
+import OrderBook;
+contract MatchEngine {
+    @global address owner;
+    @global map<address, bool> controllers;
+    @address uint256 marketPrice;
+    @address OrderBook.Book buyBook;
+    @address OrderBook.Book sellBook;
+
+
+    @global function on_deploy(address _owner) {
+        owner = _owner;
+        __debug.print(__address());
+    }
+
+    @address function addController(address controller) public export {
+        __debug.assert(owner == __transaction.get_sender(), "only onwer can add controller.");
+        relay@global (^controller) {
+            controllers[controller] = true;
+            __debug.print("add controller: ", controller);
+        }
+    }
+
+    @address function removeController(address controller) public export {
+        __debug.assert(owner == __transaction.get_sender(), "only onwer can remove controller.");
+        relay@global (^controller) {
+            __debug.assert(controllers.has(controller));
+            controllers.erase(controller);
+            __debug.print("remove controller: ", controller);
+        }
+    }
+
+    @address function processOrder(OrderBook.Order order) public {
+        address sender = __transaction.get_sender();
+        __debug.assert(controllers.has(sender), "only controller can call this function.");
+        __debug.assert(address(hash(order.pair)) == __transaction.get_self_address(), "order book address not matched.");
+        if (buyBook.sort != OrderBook.Sort.DES) {
+            buyBook.sort = OrderBook.Sort.DES;
+        }
+        if (sellBook.sort != OrderBook.Sort.ASC) {
+            sellBook.sort = OrderBook.Sort.ASC;
+        }
+        if (order.action == OrderBook.Action.BUY) {
+            processOrder(order, sellBook, buyBook);
+        } else if (order.action == OrderBook.Action.SELL) {
+            processOrder(order, buyBook, sellBook);
+        } else {
+            __debug.print("Invalid action");
+        }
+    }
+
+    @address function processOrder(OrderBook.Order takerOrder, OrderBook.Book makerBook, OrderBook.Book takerBook) {
+        // add takerOrder to takerBook
+        OrderBook.add(takerBook, takerOrder);
+        uint256 takerUnMatchedAmount = takerOrder.unMatchedAmount;
+        for (;;) {
+            if (makerBook.length == 0u256) {
+                // makerbook is empty
+                break;
+            }
+            OrderBook.Order makerOrder = OrderBook.getFirst(makerBook);
+            if (takerOrder.action == OrderBook.Action.BUY && takerOrder.price < makerOrder.price) {
+                // buy order price less than sell orderbook first price
+                break;
+            } else if (takerOrder.action == OrderBook.Action.SELL && takerOrder.price > makerOrder.price) {
+                // sell order price more than buy orderbook first price
+                break;
+            }
+            // marketprice is the maker order price
+            marketPrice = makerOrder.price;
+            uint256 matchedQuantity = takerUnMatchedAmount < makerOrder.unMatchedAmount ? takerUnMatchedAmount : makerOrder.unMatchedAmount;
+            __debug.print("matched: price: ", makerOrder.price, " , quantity: ", matchedQuantity, " , maker order: ", makerOrder);
+            takerUnMatchedAmount = takerUnMatchedAmount - matchedQuantity;
+            uint256 makerUnMatchedAmount = makerOrder.unMatchedAmount - matchedQuantity;
+            // all match, remove from order book.
+            if (makerUnMatchedAmount == 0u256) {
+                makerOrder.unMatchedAmount = makerUnMatchedAmount;
+                makerOrder.status = OrderBook.OrderStatus.FIXED;
+                makerOrder.triggerPrice = marketPrice;
+                OrderBook.updateOrder(makerBook, makerOrder);
+                OrderBook.remove(makerBook, makerOrder);
+            } else {
+                // Partial match, update order
+                makerOrder.unMatchedAmount = makerUnMatchedAmount;
+                makerOrder.status = OrderBook.OrderStatus.PARTIALLYFIXED;
+                makerOrder.triggerPrice = marketPrice;
+                OrderBook.updateOrder(makerBook, makerOrder);
+            }
+            // taker order all matched, break
+            if (takerUnMatchedAmount == 0u256) {
+                takerOrder.unMatchedAmount = takerUnMatchedAmount;
+                takerOrder.status = OrderBook.OrderStatus.FIXED;
+                takerOrder.triggerPrice = marketPrice;
+                OrderBook.updateOrder(takerBook, takerOrder);
+                OrderBook.remove(takerBook, takerOrder);
+                break;
+            }
+        }
+        // taker order not all matched, update orderbook
+        if (takerUnMatchedAmount > 0u256 && takerUnMatchedAmount != takerOrder.amount) {
+            takerOrder.unMatchedAmount = takerUnMatchedAmount;
+            takerOrder.status = OrderBook.OrderStatus.PARTIALLYFIXED;
+            OrderBook.updateOrder(takerBook, takerOrder);
+        }
+    }
+
+    @address function cancel(address initiator, uint256 orderId) public {
+        address sender = __transaction.get_sender();
+        __debug.assert(controllers.has(sender), "only controller can call this function.");
+        if (OrderBook.has(buyBook, orderId)) {
+            OrderBook.Order order = OrderBook.getOrder(buyBook, orderId);
+            __debug.assert(initiator == order.owner, "only owner can cancel order");
+            order.status = OrderBook.OrderStatus.CANCELED;
+            OrderBook.updateOrder(buyBook, order);
+            OrderBook.remove(buyBook, order);
+        } else if (OrderBook.has(sellBook, orderId)) {
+            OrderBook.Order order = OrderBook.getOrder(sellBook, orderId);
+            __debug.assert(initiator == order.owner, "only owner can cancel order");
+            order.status = OrderBook.OrderStatus.CANCELED;
+            OrderBook.updateOrder(sellBook, order);
+            OrderBook.remove(sellBook, order);
+        } else {
+            __debug.print("no such order!");
+        }
+    }
+}

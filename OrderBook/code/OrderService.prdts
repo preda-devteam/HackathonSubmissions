@@ -1,0 +1,34 @@
+allocate.address 100
+chain.gaslimit 128
+
+chain.deploy @0 OrderBook.prd={_owner:"$@0$"} 
+chain.deploy @0 MatchEngine.prd={_owner:"$@0$"}
+chain.deploy @0 OrderService.prd
+
+log.highlight init
+MatchEngine.addController @0 {controller: "0x0000001300300001:contract"}
+OrderBook.addController @0 {controller: "0x0000001300200001:contract"}
+OrderBook.addController @0 {controller: "0x0000001300300001:contract"}
+chain.run
+
+log.highlight cancel order test!
+OrderService.buy*5 @0 {pair: "DYDXUSDC", price: $random(5,10)$, amount: $random(1,1000)$}
+chain.run
+OrderService.cancel @0 {pair: "DYDXUSDC", orderId: 2}
+OrderService.cancel @1 {pair: "DYDXUSDC", orderId: 3}
+OrderService.cancel @0 {pair: "DYDXUSDC", orderId: 6}
+chain.run
+
+
+log.highlight order book test!
+OrderService.buy*5 @random {pair: "BTCUSDT", price: $random(5,10)$, amount: $random(1,1000)$}
+OrderService.sell*5 @random {pair: "BTCUSDT", price: $random(5,10)$, amount: $random(1,1000)$}
+OrderService.buy*10 @random {pair: "ETHUSDC", price: $random(1,10)$, amount: $random(1,1000)$}
+OrderService.sell*10 @random {pair: "ETHUSDC", price: $random(1,10)$, amount: $random(1,1000)$}
+OrderService.buy*10 @random {pair: "BNBUSDC", price: $random(1,10)$, amount: $random(1,1000)$}
+OrderService.sell*10 @random {pair: "BNBUSDC", price: $random(1,10)$, amount: $random(1,1000)$}
+chain.run
+
+
+viz.shard #g
+viz.addr @all
