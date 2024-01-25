@@ -1,6 +1,6 @@
 Hey there,
 We’ve got this on-chain orderbook dapp. Basically, it takes in buy and sell orders from users and does on-chain matching. There’re three main contracts:
-* OrderBook.prd: This is like the brain of the order book, defining various attributes of the order book and functions for adding, modifying, and removing orders.
+* OrderBook.prd: This is like the base of the order book, defining various attributes of the order book and functions for adding, modifying, and removing orders.
 
 * MatchEngine.prd: This is the match engine. It implements order matching and invokes functions of the OrderBook contract to operate orders.
 
