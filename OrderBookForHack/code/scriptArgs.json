@@ -1,4 +1,0 @@
-{
-  "MatchEngine.prd": "./OrderBook.prd",
-  "OrderService.prd": "./OrderBook.prd,./MatchEngine.prd"
-}
