@@ -1,0 +1,91 @@
+// Predictz is a Prediction Market for Esports:Establish a prediction market where users can bet on esports outcomes.Smart contracts manage bets, payouts, and outcome verification.
+
+contract EsportsPredictionMarket {
+
+    enum Outcome { Undecided, TeamA, TeamB, Draw }
+
+    struct Bet {
+        address bettor;
+        uint256 amount;
+        Outcome predictedOutcome;
+        bool claimed;  // To avoid double claims
+    }
+
+    mapping(address => Bet[]) public bets;
+    mapping(uint256 => uint256) public totalBets;  // Total amount of bets for each outcome
+    uint256 public totalBetsAmount;
+    Outcome public finalOutcome;
+    address public owner;
+    bool public outcomeSet;
+
+    event BetPlaced(address indexed bettor, uint256 amount, Outcome predictedOutcome);
+    event OutcomeSet(Outcome outcome);
+    event PayoutClaimed(address indexed bettor, uint256 amount);
+
+    modifier onlyOwner() {
+        require(msg.sender == owner, "Only the owner can call this function");
+        _;
+    }
+
+    modifier onlyUndecidedOutcome() {
+        require(finalOutcome == Outcome.Undecided, "Outcome is already set");
+        _;
+    }
+
+    constructor() {
+        owner = msg.sender;
+    }
+
+    function placeBet(uint256 amount, Outcome predictedOutcome) public payable onlyUndecidedOutcome {
+        require(predictedOutcome == Outcome.TeamA || predictedOutcome == Outcome.TeamB || predictedOutcome == Outcome.Draw, "Invalid outcome");
+        require(msg.value == amount, "Incorrect payment amount");
+
+        bets[msg.sender].push(Bet({
+            bettor: msg.sender,
+            amount: amount,
+            predictedOutcome: predictedOutcome,
+            claimed: false
+        }));
+
+        totalBets[predictedOutcome] += amount;
+        totalBetsAmount += amount;
+
+        emit BetPlaced(msg.sender, amount, predictedOutcome);
+    }
+
+    function setOutcome(Outcome outcome) public onlyOwner onlyUndecidedOutcome {
+        require(outcome == Outcome.TeamA || outcome == Outcome.TeamB || outcome == Outcome.Draw, "Invalid outcome");
+        
+        finalOutcome = outcome;
+        outcomeSet = true;
+
+        emit OutcomeSet(outcome);
+    }
+
+    function claimPayout() public {
+        require(outcomeSet, "Outcome is not set yet");
+        require(!bets[msg.sender][0].claimed, "Payout already claimed");
+
+        uint256 userShare = bets[msg.sender][0].amount * (totalBets[bets[msg.sender][0].predictedOutcome] / totalBetsAmount);
+        uint256 payoutAmount = 0;
+
+        if (bets[msg.sender][0].predictedOutcome == finalOutcome) {
+            payoutAmount = totalBets[bets[msg.sender][0].predictedOutcome] > 0 ? totalBetsAmount * userShare / totalBets[bets[msg.sender][0].predictedOutcome] : 0;
+        }
+
+        bets[msg.sender][0].claimed = true;
+
+        if (payoutAmount > 0) {
+            msg.sender.transfer(payoutAmount);
+            emit PayoutClaimed(msg.sender, payoutAmount);
+        }
+    }
+
+    // Function to withdraw any remaining funds after all payouts are claimed
+    function withdrawRemainingFunds() public onlyOwner {
+        require(outcomeSet, "Outcome is not set yet");
+        require(totalBetsAmount == 0, "Not all payouts are claimed");
+
+        owner.transfer(address(this).balance);
+    }
+}
