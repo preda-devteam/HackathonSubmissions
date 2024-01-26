@@ -1,0 +1,12 @@
+contract IWallet {
+    interface WalletInterface {
+        // transfer amount of tokens to other address
+        @address function transfer(address to, uint64 token_id, bigint amount);
+
+        // transfer token from address to other address.
+        @address function transferFrom(address from, address to, uint64 token_id, bigint amount);
+
+        // get the balance of the specified token in the current wallet
+        @address function bigint balanceOf(uint64 token_id);
+    }
+}

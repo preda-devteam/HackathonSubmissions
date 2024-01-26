@@ -1,0 +1,30 @@
+allocate.address 8
+chain.gaslimit 128
+
+chain.deploy @0 IWallet.prd IStorage.prd IFungibleToken.prd Wallet.prd
+
+chain.deploy @0 FungibleToken.prd={_owner:"p5cvk8fxnvnht29jcs5bqsmrwzwbvcnbeenb8m45vcqx5a36rg5765ghfw:ed25519", name:"First", symbol: "FST", decimals: 8}
+
+chain.deploy @0 TokenA.prd
+chain.run
+
+TokenA.mint @0 {amount: "100000000000000000000"}
+chain.run
+
+Wallet.transfer @0 {to: "$@1$", token_id: 81611718657, amount: "100000000"}
+Wallet.transfer @0 {to: "$@2$", token_id: 81611718657, amount: "888888"}
+chain.run
+
+
+chain.deploy @2 TokenB.prd
+chain.run
+
+TokenB.mint @2 {amount: "100000000000"}
+chain.run
+
+Wallet.transfer @2 {to: "$@0$", token_id: 81613815809, amount: "999999"}
+chain.run
+
+
+viz.shard #g
+viz.addr @all

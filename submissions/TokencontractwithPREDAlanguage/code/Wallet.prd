@@ -1,0 +1,147 @@
+import IWallet;
+import IStorage;
+contract Wallet implements IWallet.WalletInterface, IStorage.StorageInterface {
+    // user states
+    @address map<uint64, token> all_tokens;
+
+    @address map<address, map<uint64, bigint>> allowances;
+
+    @global function on_deploy() {
+        __debug.print("contract id: ", __id());
+    }
+
+
+    /*
+     * transfer self token to other address.
+     * to: the token recipient address
+     * token_id: the token id of token transfer
+     * amount: the amount of token for transfer
+     */
+    @address function transfer(address to, uint64 token_id, bigint amount) public export {
+        address sender = __transaction.get_sender();
+        __debug.assert(sender == __transaction.get_self_address());
+        transferInternal(to, token_id, amount);
+    }
+
+
+    /*
+     * transfer token from address to another address.
+     * from: the token sender
+     * to: the token receiver
+     * token_id: the token id of token transfer
+     * amount: the amount of token for transfer
+     */
+    @address function transferFrom(address from, address to, uint64 token_id, bigint amount) public export {
+        address sender = __transaction.get_sender();
+        relay@from (^sender, ^to, ^token_id, ^amount) {
+            spendAllowanceInternal(sender, token_id, amount);
+            transferInternal(to, token_id, amount);
+        }
+    }
+
+
+    @address function transferInternal(address to, uint64 token_id, bigint amount) {
+        token t = withdrawInternal(token_id, amount);
+        relay@to deposit(t);
+    }
+
+
+    /*
+     * withdraw token to other wallet.
+     * cid: the id of contract which implements IStorage
+     * to: the token recipient address
+     * token_ids: the token list of withdraw
+     * amounts: the amount list of token
+     */
+    @address function withdrawTo(uint64 cid, array<uint64> token_ids, array<bigint> amounts) public export{
+        address sender = __transaction.get_sender();
+        __debug.assert(sender == __transaction.get_self_address());
+        uint32 length = token_ids.length();
+        for (uint32 i = 0u32; i < length; i++) {
+            withdrawTo(cid, sender, token_ids[i], amounts[i]);
+        } 
+    }
+
+    @address function withdrawTo(uint64 cid, address to, uint64 token_id, bigint amount) public export{
+        address sender = __transaction.get_sender();
+        __debug.assert(sender == __transaction.get_self_address());
+
+        IStorage.StorageInterface s = IStorage.StorageInterface(cid);
+        __debug.assert(s.__valid(), "The cid is invalid!");
+        token t = withdrawInternal(token_id, amount);
+        
+        relay@to (^cid, ^t) {
+            IStorage.StorageInterface s = IStorage.StorageInterface(cid);
+            s.deposit(t);
+        }
+    }
+
+    @address function token withdrawInternal(uint64 token_id, bigint amount) {
+        __debug.assert(balanceOf(token_id) >= amount, "insufficient balance");
+        token t;
+        all_tokens[token_id].transfer(t, amount);
+        __debug.print("withdraw token amount: ", amount);
+        return t;
+    }
+
+    /*
+     * deposit token for FungibleToken.prd
+     * tokens: the tokens for deposit
+     */
+    @address function deposit(array<token> tokens) public {
+        for (uint32 i = 0u32; i < tokens.length(); i++) {
+            deposit(tokens[i]);
+        } 
+    }
+
+    @address function deposit(token t) public {
+        __debug.print("deposit token amount: ", t.get_amount());
+        t.transfer_all(all_tokens[t.get_id()]);
+    }
+
+
+    @address function approve(address spender, uint64 token_id, bigint value) public export {
+        address sender = __transaction.get_sender();
+        __debug.assert(sender == __transaction.get_self_address(), "approve token by yourself.");
+        allowances[spender][token_id] = value;
+        __debug.print("", sender, " approve ", spender, " the token ", token_id, " allowance ", value);
+    }
+
+    @address function increaseAllowance(address spender, uint64 token_id, bigint addedValue) public export {
+        address sender = __transaction.get_sender();
+        __debug.assert(sender == __transaction.get_self_address(), "approve token by yourself.");
+        bigint currentAllowance = allowance(spender, token_id);
+        allowances[spender][token_id] = currentAllowance + addedValue;
+    }
+
+    
+    @address function decreaseAllowance(address spender, uint64 token_id, bigint requestedDecrease) public export {
+        address sender = __transaction.get_sender();
+        __debug.assert(sender == __transaction.get_self_address(), "approve token by yourself.");
+        bigint currentAllowance = allowance(spender, token_id);
+        __debug.assert(currentAllowance >= requestedDecrease, "failed decrease allowance.");
+        allowances[spender][token_id] = currentAllowance - requestedDecrease;
+    }
+
+
+    @address function spendAllowanceInternal(address spender, uint64 token_id, bigint value) {
+        bigint currentAllowance = allowance(spender, token_id);
+        __debug.assert(currentAllowance >= value, "The current allowance is inadequate.");
+        allowances[spender][token_id] = currentAllowance - value;
+    }
+
+    @address function bigint allowance(address spender, uint64 token_id) public {
+        __debug.assert(allowances.has(spender), "spender is not in allowances");
+        __debug.assert(allowances[spender].has(token_id), "spender don't have this token allowance.");
+        return allowances[spender][token_id];
+    }
+
+
+    @address function bigint balanceOf(uint64 token_id) public {
+        if (all_tokens.has(token_id)) {
+            return all_tokens[token_id].get_amount();
+        } 
+        return 0ib;
+    }
+
+}

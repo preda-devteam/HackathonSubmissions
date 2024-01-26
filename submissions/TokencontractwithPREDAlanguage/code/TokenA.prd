@@ -1,0 +1,18 @@
+import FungibleToken as FT;
+import Wallet;
+contract TokenA {
+    @global uint64 cid;
+    @global address owner;
+    
+    @global function on_deploy() {
+        cid = deploy FT(__address(), "Test Token A", "TA", 18u32);
+        owner = __transaction.get_signers()[0u32];
+    }
+
+    @address function mint(bigint amount) export {
+        __debug.assert(owner == __transaction.get_sender());
+        FT ft = FT(cid);
+        token t = ft.mint(amount);
+        Wallet.deposit(t);
+    }
+}
