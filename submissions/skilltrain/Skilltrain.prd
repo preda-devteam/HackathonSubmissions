@@ -1,0 +1,74 @@
+// NFT-Based Skill Training:Develop a smart contract system where users can buy and sell skill training sessions as NFTs.Smart contracts manage the scheduling, attendance, and payment for each session.
+
+contract SkillTrainingMarketplace {
+
+    struct TrainingSession {
+        string skill;
+        uint256 price;
+        address payable trainer;
+        address payable trainee;
+        uint256 startTime;
+        uint256 endTime;
+        bool isScheduled;
+        bool isCompleted;
+    }
+
+    mapping(uint256 => TrainingSession) public trainingSessions;
+    uint256 public totalTrainingSessions;
+
+    event TrainingSessionCreated(uint256 indexed sessionId, string skill, uint256 price, address payable trainer);
+    event TrainingSessionScheduled(uint256 indexed sessionId, address payable trainee, uint256 startTime, uint256 endTime);
+    event TrainingSessionCompleted(uint256 indexed sessionId, address payable trainee);
+
+    function createTrainingSession(string memory skill, uint256 price) public {
+        require(bytes(skill).length > 0, "Skill name cannot be empty");
+        require(price > 0, "Price must be greater than zero");
+
+        uint256 sessionId = totalTrainingSessions++;
+        trainingSessions[sessionId] = TrainingSession({
+            skill: skill,
+            price: price,
+            trainer: payable(msg.sender),
+            trainee: payable(address(0)),
+            startTime: 0,
+            endTime: 0,
+            isScheduled: false,
+            isCompleted: false
+        });
+
+        emit TrainingSessionCreated(sessionId, skill, price, payable(msg.sender));
+    }
+
+    function scheduleTrainingSession(uint256 sessionId, uint256 startTime, uint256 endTime) public payable {
+        TrainingSession storage session = trainingSessions[sessionId];
+        require(session.trainer == payable(msg.sender), "Only the trainer can schedule the session");
+        require(!session.isScheduled, "Session is already scheduled");
+        require(startTime < endTime, "Invalid time range");
+        require(msg.value >= session.price, "Insufficient funds for scheduling");
+
+        session.trainee = payable(msg.sender);
+        session.startTime = startTime;
+        session.endTime = endTime;
+        session.isScheduled = true;
+
+        // Transfer funds to trainer
+        session.trainer.transfer(msg.value);
+
+        emit TrainingSessionScheduled(sessionId, payable(msg.sender), startTime, endTime);
+    }
+
+    function completeTrainingSession(uint256 sessionId) public {
+        TrainingSession storage session = trainingSessions[sessionId];
+        require(session.isScheduled, "Session is not scheduled");
+        require(payable(msg.sender) == session.trainee, "Only the trainee can complete the session");
+        require(block.timestamp >= session.endTime, "Session has not ended yet");
+        require(!session.isCompleted, "Session is already completed");
+
+        session.isCompleted = true;
+
+        // Transfer funds to trainer upon successful completion
+        session.trainer.transfer(session.price);
+
+        emit TrainingSessionCompleted(sessionId, payable(msg.sender));
+    }
+}
