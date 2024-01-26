@@ -1,0 +1,76 @@
+
+// Decentralized Skill Marketplace:Create a platform where users can offer and request specific skills.Smart contracts handle the negotiation, execution, and payment for skill-based services.
+
+
+contract SkillMarketplace {
+
+    struct SkillOffer {
+        string skill;
+        uint256 price;
+        address payable provider;
+        address payable client;
+        bool isAvailable;
+        bool isExecuted;
+    }
+
+    mapping(uint256 => SkillOffer) public skillOffers;
+    uint256 public totalSkillOffers;
+
+    event SkillOfferCreated(uint256 indexed offerId, string skill, uint256 price, address provider);
+    event SkillOfferNegotiated(uint256 indexed offerId, address negotiator, uint256 newPrice);
+    event SkillOfferExecuted(uint256 indexed offerId, address executor);
+    event SkillOfferClosed(uint256 indexed offerId, address closer);
+
+    function createSkillOffer(string memory skill, uint256 price) public {
+        require(bytes(skill).length > 0, "Skill name cannot be empty");
+        require(price > 0, "Price must be greater than zero");
+
+        uint256 offerId = totalSkillOffers++;
+        skillOffers[offerId] = SkillOffer({
+            skill: skill,
+            price: price,
+            provider: payable(msg.sender),
+            client: payable(address(0)),
+            isAvailable: true,
+            isExecuted: false
+        });
+
+        emit SkillOfferCreated(offerId, skill, price, msg.sender);
+    }
+
+    function negotiateSkillOffer(uint256 offerId, uint256 newPrice) public {
+        SkillOffer storage offer = skillOffers[offerId];
+        require(offer.isAvailable, "Skill offer is not available");
+        require(offer.client == address(0), "Skill offer is already negotiated");
+        require(msg.sender != offer.provider, "Provider cannot negotiate own offer");
+        require(newPrice > 0 && newPrice < offer.price, "Invalid negotiation price");
+
+        offer.client = payable(msg.sender);
+        offer.price = newPrice;
+
+        emit SkillOfferNegotiated(offerId, msg.sender, newPrice);
+    }
+
+    function executeSkillOffer(uint256 offerId) public payable {
+        SkillOffer storage offer = skillOffers[offerId];
+        require(offer.isAvailable, "Skill offer is not available");
+        require(offer.client == payable(msg.sender), "Only the client can execute the offer");
+        require(msg.value >= offer.price, "Insufficient funds for execution");
+
+        offer.isAvailable = false;
+        offer.isExecuted = true;
+        offer.provider.transfer(offer.price);
+
+        emit SkillOfferExecuted(offerId, msg.sender);
+    }
+
+    function closeSkillOffer(uint256 offerId) public {
+        SkillOffer storage offer = skillOffers[offerId];
+        require(!offer.isExecuted, "Cannot close an executed offer");
+        require(offer.provider == payable(msg.sender) || offer.client == payable(msg.sender), "Unauthorized closer");
+
+        offer.isAvailable = false;
+
+        emit SkillOfferClosed(offerId, msg.sender);
+    }
+}
