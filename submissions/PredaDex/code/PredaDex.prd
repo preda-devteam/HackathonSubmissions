@@ -34,7 +34,7 @@ contract PredaDex {
             for (uint32 j = i + 1; j < orderBook.length(); j++) {
                 if (orderBook[i].isBuyOrder != orderBook[j].isBuyOrder 
                     && orderBook[i].price == orderBook[j].price) {
-                    // Execute trade...
+                    // TODO: Execute trade...
                     // Remove or update orders in orderBook
                     break;
                 }
@@ -46,7 +46,7 @@ contract PredaDex {
     @address function swapTokens(string poolId, bigint token1Amount, bigint token2Amount) export {
         relay@global (^poolId, ^token1Amount, ^token2Amount) {
             LiquidityPool pool = liquidityPools[poolId];
-            // Implement swap logic based on AMM model or similar
+            // Todo: Implement swap logic based on AMM model or similar
             // Update liquidityPools[poolId] with new reserves
         }
     }
