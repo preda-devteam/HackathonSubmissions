@@ -1,0 +1,73 @@
+allocate.address 16
+chain.gaslimit 128
+
+chain.deploy @0 INonfungiblesToken.prd
+chain.deploy @0 ClaimableNFT.prd={"_creator":"$@0$", "_name": "Puppy", "_everyone_mintable":false, "_uri":"https://preda/metadata/Puppy"}
+
+log.highlight address0 addCollectionProperties
+// address0 addCollectionProperties
+ClaimableNFT.setCollectionProperties @0 {"keys": ["royalty"], "values":["1%"]}
+chain.run
+
+log.highlight address0 mint nft
+// address0 mint nft
+ClaimableNFT.mint @0 {"_metadata": {"name":"SmilingPuppy", "nft_hash": "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx0", "tradable":true, "claimable":false, "uri":"https://preda/metadata/Puppy/SmilingPuppy", "total_supply":10, "nft_properties_key":["hair color","eye color"], "nft_properties_value":["white", "black"]}}
+chain.run
+
+log.highlight address0 transfer nft1 to address4
+// address0 transfer nft1 to address4
+ClaimableNFT.transfer @0 {to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 1}
+chain.run
+
+log.highlight address0 transfer nft10 to address4
+// address0 transfer nft10 to address4
+ClaimableNFT.transfer @0 {to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 10}
+chain.run
+
+
+log.highlight address1 transfer nft2 from address0 to address4
+// address1 transfer nft2 from address0 to address4
+ClaimableNFT.transferFrom @1 {from: "$@0$", to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 2}
+chain.run
+
+log.highlight address0 set approval for address1
+// address0 set approval for address1
+ClaimableNFT.setApprovalForAll @0 {operator: "$@1$", approved: true}
+chain.run
+
+
+log.highlight address1 retry transfer nft2 to address4
+// address1 retry transfer nft2 from address0 to address4
+ClaimableNFT.transferFrom @1 {from: "$@0$", to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 2}
+chain.run
+
+log.highlight address2 transfer nft1 from address4 to address5
+// address2 transfer nft1 from address4 to address5
+ClaimableNFT.transferFrom @2 {from: "$@4$", to: "$@5$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 1}
+chain.run
+
+
+log.highlight address4 set nft1 approved for address2
+// address4 set nft1 approved for address2
+ClaimableNFT.approve @4 {nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 1, to: "$@2$"}
+chain.run
+
+log.highlight address2 retry transfer nft1 from address4 to address5
+// address2 retry transfer nft1 from address4 to address5
+ClaimableNFT.transferFrom @2 {from: "$@4$", to: "$@5$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 1}
+chain.run
+
+log.highlight address0 mint claimable nft
+// address0 mint nft
+ClaimableNFT.mint @0 {"_metadata": {"name":"medals", "nft_hash": "r1jp6cjj9k9pn4k1fmdscznawjpav06jghrawxfke3y6bnyw3gz0", "tradable":true, "claimable": true, "uri":"https://preda/metadata/Puppy/YellowPuppy", "total_supply":100, "nft_properties_key":[""], "nft_properties_value":[""]}}
+chain.run
+
+log.highlight address1 claim nft
+// address1 claim nft
+ClaimableNFT.claim @1 {nft_addr: "r1jp6cjj9k9pn4k1fmdscznawjpav06jghrawxfke3y6bnyw3gz8gw6mp8","num":2}
+// address2 claim nft
+ClaimableNFT.claim @2 {nft_addr: "r1jp6cjj9k9pn4k1fmdscznawjpav06jghrawxfke3y6bnyw3gz8gw6mp8","num":1}
+chain.run
+
+viz.addr @all
+viz.shard #g
