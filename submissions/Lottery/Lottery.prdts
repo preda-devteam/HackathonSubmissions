@@ -1,0 +1,21 @@
+allocate.address 4
+chain.gaslimit 128
+
+chain.deploy @0 Lottery.prd={}
+
+Lottery.deposit @1 {"value":1}
+Lottery.deposit @2 {"value":1}
+Lottery.deposit @3 {"value":1}
+chain.run
+
+Lottery.play @1 {"value":1}
+Lottery.play @2 {"value":1}
+Lottery.play @3 {"value":1}
+chain.run
+
+Lottery.pickWinner @0 {}
+chain.run
+
+viz.addr @all
+
+viz.profiling
