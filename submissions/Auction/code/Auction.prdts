@@ -1,0 +1,24 @@
+allocate.address 4
+chain.gaslimit 128
+
+chain.deploy @0 Token.prd
+state.set address.Token @all { balance:"10000000000000" }
+
+chain.deploy @0 Auction.prd={_bidStep:"10000"}
+
+log.highlight place bets
+Auction.placeBid @1 {amount:"100000"}
+Auction.placeBid @2 {amount:"200000"}
+chain.run
+
+log.highlight end auction
+Auction.withdraw @0 {}
+
+log.highlight withdraw leftovers
+Auction.withdraw @1 {}
+Auction.withdraw @2 {}
+chain.run
+
+viz.addr @all
+
+viz.profiling

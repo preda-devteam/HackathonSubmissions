@@ -1,0 +1,108 @@
+import Token;
+
+contract Auction {
+    @global address owner;
+    
+    @global bigint topBid;
+    @global bigint topBindingBid;
+    @global bigint bidStep;
+
+    @global bool canceled;
+    @global bool ended;
+    @global address topBidAddress;
+    @address bigint bid;
+
+    @global function on_deploy(bigint _bidStep)
+    {
+        owner = __transaction.get_sender();
+        bidStep = _bidStep;
+        topBid = 0ib;
+        topBindingBid = 0ib;
+        canceled = false;
+        ended = false;
+        topBidAddress;
+    }
+
+    @address function placeBid(bigint amount) public export
+    {
+        __debug.assert(!canceled, "auction is canceled");
+
+        bigint newBid = bid + amount;
+        __debug.assert(newBid > topBindingBid, "newBid is not high enough"); // only accept bids that are higher than top bid
+        
+        Token.transfer(__address(), amount);
+        bid = newBid;
+        address bidder = __transaction.get_sender();
+
+        relay@global (^newBid, ^bidder) {
+            if (newBid > topBid) {
+                if (topBidAddress != bidder) {
+                    topBidAddress = bidder;
+                    if ((topBid + bidStep) > newBid) {
+                        topBindingBid = newBid;
+                    } else {
+                        topBindingBid = topBid + bidStep;
+                    }
+                }
+                topBid = newBid;
+            } else {
+                if (topBid > (newBid + bidStep)) {
+                    topBindingBid = newBid + bidStep;
+                } else {
+                    topBindingBid = topBid;
+                }
+            }
+            
+            topBid = newBid;
+        }
+    }
+
+    @global function cancel() public export // cancel auction
+    {
+        __debug.assert(!canceled);
+        __debug.assert(owner == __transaction.get_sender()); // only owner can cancel
+        canceled = true;
+    }
+
+    @address function bool withdraw() public export
+    {
+        address withdrawAddress;
+        bigint withdrawAmount;
+
+        if (canceled) { // if canceled anyone can withdraw
+            withdrawAddress = __transaction.get_sender();
+            withdrawAmount = bid;
+        } else {
+            if (owner == __transaction.get_sender()) { // action is closed, owner withdraws top bid
+                withdrawAddress = owner;
+                withdrawAmount = topBindingBid;
+                relay@topBidAddress (^withdrawAmount) {
+                    bid -= withdrawAmount;
+                }
+                relay@global () {
+                    ended = true;
+                }
+            } else {
+                if (topBidAddress == __transaction.get_sender()) {
+                    if (ended) {
+                        withdrawAmount = bid;
+                        bid = 0ib;
+                    } else {
+                        withdrawAmount = bid - topBindingBid;
+                        bid -= withdrawAmount;
+                    }
+                    withdrawAddress = __transaction.get_sender();
+                } else {
+                    withdrawAddress = __transaction.get_sender();
+                    withdrawAmount = bid;
+                    bid = 0ib;
+                }
+            }
+        }
+
+        relay@__address() (^withdrawAddress, ^withdrawAmount) {
+            Token.transfer(withdrawAddress, withdrawAmount);
+        }
+        return true;
+    }
+}
