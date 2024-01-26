@@ -1,0 +1,5 @@
+{
+  "BaseNFT.prd": "./INonfungiblesToken.prd",
+  "ClaimableNFT.prd": "./INonfungiblesToken.prd",
+  "BatchOperationableNFT.prd": "./INonfungiblesToken.prd"
+}

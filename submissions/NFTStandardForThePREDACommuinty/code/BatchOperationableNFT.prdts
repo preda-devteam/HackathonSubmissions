@@ -1,0 +1,92 @@
+allocate.address 16
+chain.gaslimit 128
+
+chain.deploy @0 INonfungiblesToken.prd
+chain.deploy @0 BatchOperationableNFT.prd={"_creator":"$@0$", "_name": "Puppy", "_everyone_mintable":false, "_uri":"https://preda/metadata/Puppy"}
+
+log.highlight address0 addCollectionProperties
+// address0 addCollectionProperties
+BatchOperationableNFT.setCollectionProperties @0 {"keys": ["royalty"], "values":["1%"]}
+chain.run
+
+log.highlight address0 mint nft
+// address0 mint nft
+BatchOperationableNFT.mint @0 {"_metadata": {"name":"SmilingPuppy", "nft_hash": "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx0", "tradable":true, "uri":"https://preda/metadata/Puppy/SmilingPuppy", "total_supply":10, "nft_properties_key":["hair color","eye color"], "nft_properties_value":["white", "black"]}}
+chain.run
+
+log.highlight address0 transfer nft1 to address4
+// address0 transfer nft1 to address4
+BatchOperationableNFT.transfer @0 {to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 1}
+chain.run
+
+log.highlight address0 transfer nft10 to address4
+// address0 transfer nft10 to address4
+BatchOperationableNFT.transfer @0 {to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 10}
+chain.run
+
+
+log.highlight address1 transfer nft2 from address0 to address4
+// address1 transfer nft2 from address0 to address4
+BatchOperationableNFT.transferFrom @1 {from: "$@0$", to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 2}
+chain.run
+
+log.highlight address0 set approval for address1
+// address0 set approval for address1
+BatchOperationableNFT.setApprovalForAll @0 {operator: "$@1$", approved: true}
+chain.run
+
+
+log.highlight address1 retry transfer nft2 to address4
+// address1 retry transfer nft2 from address0 to address4
+BatchOperationableNFT.transferFrom @1 {from: "$@0$", to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 2}
+chain.run
+
+log.highlight address2 transfer nft1 from address4 to address5
+// address2 transfer nft1 from address4 to address5
+BatchOperationableNFT.transferFrom @2 {from: "$@4$", to: "$@5$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 1}
+chain.run
+
+
+log.highlight address4 set nft1 approved for address2
+// address4 set nft1 approved for address2
+BatchOperationableNFT.approve @4 {nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 1, to: "$@2$"}
+chain.run
+
+log.highlight address2 retry transfer nft1 from address4 to address5
+// address2 retry transfer nft1 from address4 to address5
+BatchOperationableNFT.transferFrom @2 {from: "$@4$", to: "$@5$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_id: 1}
+chain.run
+
+log.highlight address0 mint nft
+// address0 mint nft
+BatchOperationableNFT.mint @0 {"_metadata": {"name":"YellowPuppy", "nft_hash": "22pe8e2j4nfvnrj41t4y0q728fnngpb6y8j3na0ct3xh1san16w0", "tradable":true, "uri":"https://preda/metadata/Puppy/YellowPuppy", "total_supply":1, "nft_properties_key":["hair color","eye color"], "nft_properties_value":["yellow", "blue"]}}
+chain.run
+
+log.highlight address0 batchTransferFrom nft(7,8,9,10) to address4
+// address0 address0 transfer nft(7,8,9,10) to address4
+BatchOperationableNFT.batchTransferFrom @0 {from: "$@0$", to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_ids: [7,8,9,10]}
+chain.run
+
+log.highlight address0 batchTransferFrom nft(7,8,9) to address4
+// address0 transfer nft(7,8,9) to address4
+BatchOperationableNFT.batchTransferFrom @0 {from: "$@0$", to: "$@4$", nft_addr: "d0f4dq7ww0231hftj5vw4a3jcfv7mwj4658en9ppfradp3y14jx1gzcggc", nft_ids: [7,8,9]}
+chain.run
+
+
+log.highlight address0 mint non-tradable nft
+// address0 mint nft
+BatchOperationableNFT.mint @0 {"_metadata": {"name":"medals", "nft_hash": "r1jp6cjj9k9pn4k1fmdscznawjpav06jghrawxfke3y6bnyw3gz0", "tradable":false, "uri":"https://preda/metadata/Puppy/YellowPuppy", "total_supply":100, "nft_properties_key":[""], "nft_properties_value":[""]}}
+chain.run
+
+log.highlight address0 airDrop nft to address7,8,9,10
+// address0 airDrop nft to address7,8,9,10
+BatchOperationableNFT.airDrop @0 {from: "$@0$", to_list: ["$@7$","$@8$","$@9$","$@10$",], nft_addr: "r1jp6cjj9k9pn4k1fmdscznawjpav06jghrawxfke3y6bnyw3gz8gw6mp8"}
+chain.run
+
+log.highlight address8 transfer nft12 to address9
+// address8 transfer nft12 to address9
+BatchOperationableNFT.transferFrom @8 {from: "$@8$", to: "$@9$", nft_addr: "r1jp6cjj9k9pn4k1fmdscznawjpav06jghrawxfke3y6bnyw3gz8gw6mp8", nft_id: 12}
+chain.run
+
+viz.addr @all
+viz.shard #g

@@ -1,0 +1,201 @@
+import INonfungiblesToken;
+contract BatchOperationableNFT implements INonfungiblesToken.BatchOperationableNFTInterface {
+    struct Metadata {
+        string name;
+        hash nft_hash;
+        string uri;
+        bool tradable;
+        uint256 total_supply;
+        array<string> nft_properties_key;
+        array<string> nft_properties_value;
+    }
+
+    @global address creator;
+    @global string name;
+    @global bool everyone_mintable;
+    @global string uri;
+    @global uint256 total_supply;
+    @global array<string> collection_properties_key;
+    @global array<string> collection_properties_value;
+
+    @global map<address, string> nfts;
+
+    @global map<address, map<address, bool>> operator_approvals;
+
+    // nft address states
+    @address Metadata metadata;
+    
+    // the position in the collection
+    @address uint256 index;
+    // nft owners
+    @address map<uint256, address> owners;
+    // nft approvals
+    @address map<uint256, address> nft_approvals;
+
+    @global function on_deploy(address _creator, string _name, bool _everyone_mintable, string _uri) {
+        creator = _creator;
+        name = _name;
+        everyone_mintable = _everyone_mintable;
+        uri = _uri;
+        __debug.print("new nft collection: ", __address(), ", ", __id());
+    }
+
+    @address function setCollectionProperties(array<string> keys, array<string> values) public export const{
+        __debug.assert(__transaction.get_sender() == creator, "Only creator can set collection properties");
+        relay@global (^keys, ^values) {
+            collection_properties_key = keys;
+            collection_properties_value = values;
+        }
+    }
+
+    
+    @address function address mint(Metadata _metadata) public export const{
+        if (!everyone_mintable) {
+            __debug.assert(__transaction.get_sender() == creator, "Only creator can mint NFT!");
+        }
+        return _mint(_metadata);
+    }
+
+    @address function address _mint(Metadata _metadata) const{
+        address nft_addr = address(_metadata.nft_hash);
+        __debug.assert(!nfts.has(nft_addr), "NFT exits!");
+        relay@global (^_metadata, ^nft_addr) {
+            // double check
+            __debug.assert(!nfts.has(nft_addr), "NFT exits!");
+            nfts[nft_addr] = _metadata.name;
+            relay@nft_addr createNFT(_metadata, total_supply);
+            total_supply = total_supply + _metadata.total_supply;
+        }
+        
+        return nft_addr;
+    }
+
+    @address function createNFT(Metadata _metadata, uint256 _index) {
+        metadata = _metadata;
+        index = _index;
+        __debug.print("NFT create: ", _metadata.name);
+    }
+
+    @address function transfer(address to, address nft_addr, uint256 nft_id) public export const {
+        transferFrom(__transaction.get_sender(), to, nft_addr, nft_id);
+    }
+
+    @address function transferFrom(address from, address to, address nft_addr, uint256 nft_id) public export const {
+        address spender = __transaction.get_sender();
+        __debug.print("the spender:", spender, " transfer nft from: ", from, " to: ", to, ". nft_addr: ", nft_addr, " nft_id: ", nft_id);
+        relay@nft_addr (^spender, ^from, ^to, ^nft_addr, ^nft_id) {
+            authentication(spender, from, nft_id);
+            _transfer(to, nft_id);
+        }
+    }
+
+    @address function batchTransferFrom(address from, address to, address nft_addr, array<uint256> nft_ids) public export const {
+        address spender = __transaction.get_sender();
+        __debug.print("the spender:", spender, " transfer nft from: ", from, " to: ", to, ". nft_addr: ", nft_addr, " nft_ids: ", nft_ids);
+        relay@nft_addr (^spender, ^from, ^to, ^nft_addr, ^nft_ids) {
+            for(uint32 i = 0u32; i<nft_ids.length(); i++) {
+                authentication(spender, from, nft_ids[i]);
+                _transfer(to, nft_ids[i]);
+            }
+
+        }
+    }
+
+    @address function airDrop(address from, array<address> to_list, address nft_addr) public export const {
+        address spender = __transaction.get_sender();
+        relay@nft_addr (^spender, ^from, ^to_list, ^nft_addr) {
+            uint256 nft_id = index + 0u256;
+            for(uint32 i = 0u32; i<to_list.length(); i++) {
+                while (owners.has(nft_id)) {
+                    nft_id++;
+                }
+                authentication(spender, from, nft_id);
+                _transfer(to_list[i], nft_id);
+            }
+        }
+    }
+
+
+    @address function authentication(address spender, address from, uint256 nft_id) {
+        // check from is owner or creator
+        address owner = ownerOf(nft_id);
+        address address0;
+        if (owner == address0){
+            __debug.assert(from == creator, "Authentication failed. not creator.");
+        } else {
+            __debug.assert(from == owner, "Authentication failed. The owner of nft: ", nft_id, " is not ", from);
+            __debug.assert(metadata.tradable, "The NFT is non-transferable.");
+        }
+
+        // check spender
+        __debug.assert(spender == from || isApprovedForAll(from, spender) || getApproved(nft_id) == spender, "Authentication failed!");
+
+        __debug.print("Authentication success");
+    }
+
+
+    @address function _transfer(address to, uint256 nft_id) {
+        // check nft id is valid
+        __debug.assert(nft_id >= index && nft_id < (index + total_supply), "Invalid nft id.");
+
+        // clear approve
+        if (nft_approvals.has(nft_id)) {
+            nft_approvals.erase(nft_id);
+        }
+        
+        owners[nft_id] = to;
+        __debug.print("NFT ", nft_id, " transfer to ", to, " success.");
+        
+    }
+
+    @address function address ownerOf(uint256 nft_id) public {
+        address a;
+        if (owners.has(nft_id)) {
+            a = owners[nft_id];
+        } 
+        return a;
+    }
+
+    @address function address getApproved(uint256 nft_id) public {
+        address a;
+        if (nft_approvals.has(nft_id)) {
+            a = nft_approvals[nft_id];
+        }
+        return a;
+    }
+
+    @address function approve(address nft_addr, uint256 nft_id, address to) public export const {
+        __debug.print("begin approve nft_addr: ", nft_addr, "nft_id: ", nft_id, " to: " , to);
+        address sender = __transaction.get_sender();
+        relay@nft_addr (^sender, ^nft_addr, ^nft_id, ^to) {
+            address owner = ownerOf(nft_id);
+            __debug.assert(sender == owner, "Authentication failed, ", sender ," is not the owner of the nft ", nft_id);
+            _approve(nft_id, to);
+            __debug.print("Address:", sender, "approve nft:", nft_id, " to: ", to, " success.");
+
+        }
+    }
+
+    @address function _approve(uint256 nft_id, address to) {
+        nft_approvals[nft_id] = to;
+    }
+
+    @address function setApprovalForAll(address operator, bool approved) public export const {
+        address sender = __transaction.get_sender();
+        relay@global (^sender, ^operator, ^approved) {
+            operator_approvals[sender][operator] = approved;
+            __debug.print(sender, " setApprovalForAll: ", operator, ": ", approved);
+        }
+        
+    }
+
+    @global function bool isApprovedForAll(address owner, address operator) public const {
+        bool b;
+        if (operator_approvals.has(owner) && operator_approvals[owner].has(operator)) {
+            b = operator_approvals[owner][operator];
+        }
+        return b;
+    }
+
+
+}

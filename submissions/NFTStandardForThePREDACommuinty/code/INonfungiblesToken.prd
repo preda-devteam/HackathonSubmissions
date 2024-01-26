@@ -1,0 +1,29 @@
+contract INonfungiblesToken {
+    interface BaseNFTInterface {
+        @address function transferFrom(address from, address to, address nft_addr, uint256 nft_id) const;
+        @address function approve(address nft_addr, uint256 nft_id, address to) const;
+        @address function setApprovalForAll(address operator, bool approved) const;
+        @address function address getApproved(uint256 nft_id);
+        @global function bool isApprovedForAll(address owner, address operator) const;
+    }
+
+    interface ClaimableNFTInterface {
+        @address function transferFrom(address from, address to, address nft_addr, uint256 nft_id) const;
+        @address function approve(address nft_addr, uint256 nft_id, address to) const;
+        @address function setApprovalForAll(address operator, bool approved) const;
+        @address function address getApproved(uint256 nft_id);
+        @global function bool isApprovedForAll(address owner, address operator) const;
+        @address function claim(address nft_addr, uint32 num) const;
+    }
+
+    interface BatchOperationableNFTInterface {
+        @address function transferFrom(address from, address to, address nft_addr, uint256 nft_id) const;
+        @address function approve(address nft_addr, uint256 nft_id, address to) const;
+        @address function setApprovalForAll(address operator, bool approved) const;
+        @address function address getApproved(uint256 nft_id);
+        @global function bool isApprovedForAll(address owner, address operator) const;
+        @address function batchTransferFrom(address from, address to, address nft_addr, array<uint256> nft_ids) const;
+        @address function airDrop(address from, array<address> to_list, address nft_addr) const;
+    }
+
+}
