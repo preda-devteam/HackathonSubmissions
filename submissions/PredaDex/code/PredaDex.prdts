@@ -1,0 +1,32 @@
+// Allocate addresses for testing
+allocate.address 10
+chain.gaslimit 1000
+
+// Deploy the DEX contract
+chain.deploy @1 DecentralizedExchange.prd
+
+// Simulating placing orders
+DecentralizedExchange.placeOrder @2 { isBuyOrder: true, price: "100", quantity: "10" }
+DecentralizedExchange.placeOrder @3 { isBuyOrder: false, price: "100", quantity: "10" }
+
+// Run the chain to execute order placements
+chain.run
+
+// Matching orders
+DecentralizedExchange.matchOrders @1 {}
+
+// Run the chain to execute order matching
+chain.run
+
+// Simulate adding liquidity to a pool
+DecentralizedExchange.addLiquidity @4 { poolId: "ETH/BTC", token1Amount: "1000", token2Amount: "500" }
+
+// Simulate swapping tokens
+DecentralizedExchange.swapTokens @5 { poolId: "ETH/BTC", token1Amount: "100", token2Amount: "50" }
+
+// Run the chain to execute liquidity and swap operations
+chain.run
+
+// Visualize the results and profiling
+viz.addr @all
+viz.profiling
