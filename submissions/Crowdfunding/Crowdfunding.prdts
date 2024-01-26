@@ -1,0 +1,39 @@
+// Set random seed and allocate addresses for testing
+random.reseed
+allocate.address 10  // Allocate 10 addresses for testing
+
+// Set gas limit for transactions
+chain.gaslimit 1000
+
+// Deploy the Crowdfunding contract
+chain.deploy @1 Crowdfunding.prd
+
+// Initialize the contract
+txn_init = Crowdfunding.init @1 {}
+
+// Create projects with different goals and deadlines
+txn_createProject1 = Crowdfunding.createProject @1 { goal: "5000", deadline: "$__block.get_height() + 50$" }
+txn_createProject2 = Crowdfunding.createProject @2 { goal: "10000", deadline: "$__block.get_height() + 100$" }
+
+// Contributors making contributions to the projects
+txn_contribute1 = Crowdfunding.contribute @3 { projectIndex: 0, amount: "1000" }
+txn_contribute2 = Crowdfunding.contribute @4 { projectIndex: 1, amount: "2000" }
+
+// Simulate passage of blocks to reach project deadlines
+chain.mine 60
+
+// Check project status and release funds or refund contributions
+txn_releaseFunds1 = Crowdfunding.releaseFunds @1 { projectIndex: 0 }
+txn_refund1 = Crowdfunding.refund @3 { projectIndex: 1 }
+
+// Run the chain to execute all transactions
+chain.run
+
+// Visualize the results
+viz.txn txn_init
+viz.txn txn_createProject1
+viz.txn txn_createProject2
+viz.txn txn_contribute1
+viz.txn txn_contribute2
+viz.txn txn_releaseFunds1
+viz.txn txn_refund1
