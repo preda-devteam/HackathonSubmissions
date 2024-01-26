@@ -1,0 +1,69 @@
+contract PredaDex {
+
+    struct Order {
+        address trader;
+        bool isBuyOrder;
+        bigint price;
+        bigint quantity;
+    }
+
+    struct LiquidityPool {
+        bigint token1Reserve;
+        bigint token2Reserve;
+    }
+
+    @global array<Order> orderBook;
+    @global map<string, LiquidityPool> liquidityPools;
+
+    // Place a new order
+    @address function placeOrder(bool isBuyOrder, bigint price, bigint quantity) export {
+        Order newOrder;
+        newOrder.trader = __transaction.get_sender();
+        newOrder.isBuyOrder = isBuyOrder;
+        newOrder.price = price;
+        newOrder.quantity = quantity;
+        relay@global (^newOrder) {
+            orderBook.push(newOrder);
+        }
+    }
+
+ // Match orders from the order book
+    @global function matchOrders() export {
+        // Simple matching logic (First-Come-First-Serve)
+        for (uint32 i = 0u; i < orderBook.length(); i++) {
+            for (uint32 j = i + 1; j < orderBook.length(); j++) {
+                if (orderBook[i].isBuyOrder != orderBook[j].isBuyOrder 
+                    && orderBook[i].price == orderBook[j].price) {
+                    // Execute trade...
+                    // Remove or update orders in orderBook
+                    break;
+                }
+            }
+        }
+    }
+
+    // Swap tokens using a liquidity pool
+    @address function swapTokens(string poolId, bigint token1Amount, bigint token2Amount) export {
+        relay@global (^poolId, ^token1Amount, ^token2Amount) {
+            LiquidityPool pool = liquidityPools[poolId];
+            // Implement swap logic based on AMM model or similar
+            // Update liquidityPools[poolId] with new reserves
+        }
+    }
+
+    // Add liquidity to a pool
+    @address function addLiquidity(string poolId, bigint token1Amount, bigint token2Amount) export {
+        relay@global (^poolId, ^token1Amount, ^token2Amount) {
+            liquidityPools[poolId].token1Reserve += token1Amount;
+            liquidityPools[poolId].token2Reserve += token2Amount;
+        }
+    }
+
+    // Remove liquidity from a pool
+    @address function removeLiquidity(string poolId, bigint token1Amount, bigint token2Amount) export {
+        relay@global (^poolId, ^token1Amount, ^token2Amount) {
+            liquidityPools[poolId].token1Reserve -= token1Amount;
+            liquidityPools[poolId].token2Reserve -= token2Amount;
+        }
+    }
+}
