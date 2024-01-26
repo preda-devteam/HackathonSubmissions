@@ -1,0 +1,15 @@
+random.reseed 88
+
+allocate.address 2
+chain.gaslimit 256
+
+chain.deploy @0 BountyMarketplace.prd={}
+
+BountyMarketplace.createTask @0 {_taskTitle:"New Task", _taskDescription: "Lorem ipsum", _rewardAmount: "10000"}
+chain.run
+
+BountyMarketplace.completeTask @1 {taskId: 0}
+chain.run
+
+viz.addr @all
+viz.profiling
