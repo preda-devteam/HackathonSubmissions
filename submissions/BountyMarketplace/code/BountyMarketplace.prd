@@ -1,0 +1,57 @@
+contract BountyMarketplace {
+    @global uint256 totalTasks;
+    @address bigint balance;
+
+    // Struct to represent a bounty task
+    struct BountyTask {
+        address taskCreator;
+        string taskTitle;
+        string taskDescription;
+        bigint rewardAmount;
+        bool isTaskCompleted;
+    }
+
+    @uint256 BountyTask task;
+
+    @global function on_deploy() {
+        totalTasks = 0u;
+    }
+
+    @address function createTask(string _taskTitle, string _taskDescription, bigint _rewardAmount) export {
+        address creator = __transaction.get_sender();
+        BountyTask newTask;
+        newTask.taskCreator = creator;
+        newTask.taskTitle = _taskTitle;
+        newTask.taskDescription = _taskDescription;
+        newTask.rewardAmount = _rewardAmount;
+        newTask.isTaskCompleted = false;
+
+        relay@global (^newTask) {
+            uint256 taskId = totalTasks;
+            totalTasks++;
+            relay@taskId (^newTask) {
+                task = newTask;
+            }
+        }
+    }
+
+    @uint256 function bool taskStatus() export {
+        return task.isTaskCompleted;
+    }
+
+    @address function completeTask(uint256 taskId) export {
+        address completer = __transaction.get_sender();
+        relay@taskId (^completer) {
+            __debug.assert(!task.isTaskCompleted, "Task is already completed");
+            __debug.assert(task.taskCreator != completer, "Task creator cannot complete the task");
+            task.isTaskCompleted = true;
+            relay@completer (auto rewardAmount = task.rewardAmount) {
+                balance += rewardAmount;
+            }
+        }
+    }
+
+    @address function bigint getBalance() export {
+        return balance;
+    }
+}
