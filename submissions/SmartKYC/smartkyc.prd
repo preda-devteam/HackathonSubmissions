@@ -1,0 +1,55 @@
+// Decentralized Identity Verification:Develop a system for decentralized identity verification.Smart contracts securely handle identity verification processes and maintain user privacy.
+
+contract IdentityVerification {
+
+    struct User {
+        string name;
+        string governmentID;
+        bool isVerified;
+        mapping(address => bool) allowedVerifiers;
+    }
+
+    mapping(address => User) public users;
+
+    event IdentitySubmitted(address indexed userAddress, string name, string governmentID);
+    event IdentityVerified(address indexed userAddress, address indexed verifierAddress);
+
+    modifier onlyUser() {
+        require(users[msg.sender].isVerified, "User is not verified");
+        _;
+    }
+
+    modifier onlyVerifier(address userAddress) {
+        require(users[userAddress].allowedVerifiers[msg.sender], "Not authorized to verify this user");
+        _;
+    }
+
+    function submitIdentity(string memory name, string memory governmentID) public {
+        require(bytes(name).length > 0 && bytes(governmentID).length > 0, "Name and government ID cannot be empty");
+        users[msg.sender] = User({
+            name: name,
+            governmentID: governmentID,
+            isVerified: false
+        });
+
+        emit IdentitySubmitted(msg.sender, name, governmentID);
+    }
+
+    function requestVerification(address userAddress) public onlyUser {
+        users[userAddress].allowedVerifiers[msg.sender] = true;
+    }
+
+    function verifyIdentity(address userAddress) public onlyVerifier(userAddress) {
+        users[userAddress].isVerified = true;
+        emit IdentityVerified(userAddress, msg.sender);
+    }
+
+    function getUserDetails() public view onlyUser returns (string memory, string memory) {
+        User storage user = users[msg.sender];
+        return (user.name, user.governmentID);
+    }
+
+    function isUserVerified(address userAddress) public view returns (bool) {
+        return users[userAddress].isVerified;
+    }
+}
