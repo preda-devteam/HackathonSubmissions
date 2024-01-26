@@ -1,0 +1,5 @@
+{
+  "FungibleToken.prd": "./IFungibleToken.prd",
+  "Wallet.prd": "./IWallet.prd,./IStorage.prd",
+  "TokenA.prd": "./FungibleToken.prd,./Wallet.prd,./IWallet.prd,./IFungibleToken.prd",
+}

@@ -1,0 +1,121 @@
+import IFungibleToken;
+
+contract FungibleToken implements IFungibleToken.FungibleTokenInterface {
+    const uint32 MAX_NAME_LENGTH = 32u32;
+    const uint32 MAX_SYMBOL_LENGTH = 8u32;
+    const uint32 MAX_DECIMALS = 32u32;
+
+    // fungible token metadata
+    struct MetaData {
+        // Name of the fungible metadata.
+        string name;
+        // Symbol of the fungible metadata, usually a shorter version of the name.
+        // For example, US Dollar is USD.
+        string symbol;
+        // Number of decimals used for display purposes.
+        // For example, if `decimals` equals `2`, a balance of `505` coins should be displayed to a user as `5.05` (`505 / 10 ** 2`).
+        uint32 decimals;
+    }
+
+
+    // token states
+    // the owner of token, only owner can mint, burn and withdraw tokens.
+    @global address owner;
+    // the meta data of token
+    @global MetaData meta_data;
+    // the total supply of token
+    @global bigint total_supply;
+
+    /*
+     * create a fungible token.
+     * name: the name of fungible token, 0 < name.length <= 32.
+     * symbol: the symbol of fungible token, usually a shorter version of the name. 0 < symbol.length <= 8
+     * decimals: the symbol of fungible token, usually a shorter version of the name. decimals <= 32
+     * initial: the initial of supply.
+     */
+    @global function on_deploy(address _owner, string name, string symbol, uint32 decimals) {
+        __debug.assert(name.length() > 0u32 && name.length() <= MAX_NAME_LENGTH, "0 < name.length <= 32");
+        __debug.assert(symbol.length() > 0u32 && symbol.length() <= MAX_SYMBOL_LENGTH, "0 < symbol.length <= 8");
+        __debug.assert(decimals <= MAX_DECIMALS, "decimals is over the maximum of 32");
+
+        owner = _owner;
+        meta_data.name = name;
+        meta_data.symbol = symbol;
+        meta_data.decimals = decimals;
+
+        __debug.print("new fungible token, symbol: ", symbol, ", contract id: ", __id(), ", contract address: ", __address(), ", owner: ", owner);
+    }
+
+
+    /*
+     * mint fungible token, only token owner could mint token.
+     * amount: the amount of token mint
+     */
+    @address function token mint(bigint amount) public {
+        __debug.assert(__transaction.get_sender() == owner, "only the owner can mint token");
+        token t = mintInternal(amount);
+        relay@global increaseSupply(amount);
+        return t;
+    }
+
+
+    // mint the amount of fungible token, token will be stored at token_lib
+    @address function token mintInternal(bigint amount) {
+        token t = __mint(amount);
+        __debug.print("token mint ", amount);
+        return t;
+    }
+
+
+    @address function burn(token t) public {
+        __debug.assert(__transaction.get_sender() == owner, "only the owner can burn token");
+        bigint amount = t.get_amount();
+        burnInternal(t);
+        relay@global decreaseSupply(amount);
+    }
+
+    // burn the amount of fungible token, burn from token_lib.
+    @address function burnInternal(token t) {
+        bigint amount = t.get_amount();
+        __burn(t);
+        __debug.print("token burn ", amount);
+    }
+
+
+    @global function increaseSupply(bigint amount) {
+        total_supply += amount;
+        __debug.print("increase supply ", amount);
+    }
+
+    @global function decreaseSupply(bigint amount) {
+        total_supply -= amount;
+        __debug.print("decrease supply ", amount);
+    }
+
+
+    // get the token current supply
+    @global function bigint getSupply() public const {
+        return total_supply;
+    }
+
+    // get the token name 
+    @global function const string getName() public const {
+        return meta_data.name;
+    }
+
+    // get the token symbol
+    @global function const string getSymbol() public const {
+        return meta_data.symbol;
+    }
+
+    // get the token decimals
+    @global function uint32 getDecimals() public const {
+        return meta_data.decimals;
+    }
+
+    // get the token owner
+    @global function address getOwner() public const {
+        return owner;
+    }
+
+}

@@ -1,0 +1,9 @@
+contract IStorage {
+    interface StorageInterface {
+        // withdraw amount of tokens from current wallet to other wallet
+        @address function withdrawTo(uint64 cid, address to, uint64 token_id, bigint amount);
+
+        // deposit token to current wallet
+        @address function deposit(token t);
+    }
+}
