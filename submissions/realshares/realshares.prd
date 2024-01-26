@@ -1,0 +1,105 @@
+// Tokenized Real Estate Investment:Create a platform where users can invest in real estate properties through tokenized assets.Smart contracts handle dividends, voting rights, and property management.
+
+contract RealEstateInvestment {
+
+    struct Property {
+        string location;
+        uint256 totalShares;
+        uint256 availableShares;
+        uint256 pricePerShare;
+        address owner;
+        mapping(address => uint256) investorShares;
+        mapping(address => bool) hasVotingRights;
+    }
+
+    mapping(uint256 => Property) public properties;
+    uint256 public totalProperties;
+
+    mapping(address => uint256) public balances;
+
+    event PropertyCreated(uint256 indexed propertyId, string location, uint256 totalShares, uint256 pricePerShare, address owner);
+    event SharesPurchased(uint256 indexed propertyId, address investor, uint256 sharesPurchased);
+    event DividendsDistributed(uint256 indexed propertyId, address investor, uint256 dividends);
+    event VotingRightsGranted(uint256 indexed propertyId, address investor);
+    event PropertyManagementUpdated(uint256 indexed propertyId, string newLocation, uint256 newPricePerShare);
+
+    modifier onlyPropertyOwner(uint256 propertyId) {
+        require(properties[propertyId].owner == msg.sender, "Only the property owner can call this function");
+        _;
+    }
+
+    modifier onlyShareholder(uint256 propertyId) {
+        require(properties[propertyId].investorShares[msg.sender] > 0, "Only shareholders can call this function");
+        _;
+    }
+
+    function createProperty(string memory location, uint256 totalShares, uint256 pricePerShare) public {
+        uint256 propertyId = totalProperties++;
+        properties[propertyId] = Property({
+            location: location,
+            totalShares: totalShares,
+            availableShares: totalShares,
+            pricePerShare: pricePerShare,
+            owner: msg.sender
+        });
+
+        emit PropertyCreated(propertyId, location, totalShares, pricePerShare, msg.sender);
+    }
+
+    function purchaseShares(uint256 propertyId, uint256 sharesToPurchase) public payable {
+        Property storage property = properties[propertyId];
+        require(property.availableShares >= sharesToPurchase, "Not enough available shares");
+        require(msg.value == sharesToPurchase * property.pricePerShare, "Incorrect payment amount");
+
+        property.investorShares[msg.sender] += sharesToPurchase;
+        property.availableShares -= sharesToPurchase;
+
+        balances[property.owner] += msg.value;
+
+        emit SharesPurchased(propertyId, msg.sender, sharesToPurchase);
+    }
+
+    function grantVotingRights(uint256 propertyId, address investor) public onlyPropertyOwner(propertyId) {
+        properties[propertyId].hasVotingRights[investor] = true;
+        emit VotingRightsGranted(propertyId, investor);
+    }
+
+    function updatePropertyManagement(uint256 propertyId, string memory newLocation, uint256 newPricePerShare) public onlyPropertyOwner(propertyId) {
+        properties[propertyId].location = newLocation;
+        properties[propertyId].pricePerShare = newPricePerShare;
+        emit PropertyManagementUpdated(propertyId, newLocation, newPricePerShare);
+    }
+
+    function voteOnPropertyManagement(uint256 propertyId, string memory newLocation, uint256 newPricePerShare) public onlyShareholder(propertyId) {
+        require(properties[propertyId].hasVotingRights[msg.sender], "You do not have voting rights");
+        properties[propertyId].location = newLocation;
+        properties[propertyId].pricePerShare = newPricePerShare;
+        emit PropertyManagementUpdated(propertyId, newLocation, newPricePerShare);
+    }
+
+    function distributeDividends(uint256 propertyId) public onlyPropertyOwner(propertyId) {
+        Property storage property = properties[propertyId];
+        require(property.availableShares < property.totalShares, "All shares must be sold before distributing dividends");
+
+        uint256 totalDividends = address(this).balance;
+        uint256 dividendPerShare = totalDividends / (property.totalShares - property.availableShares);
+
+        for (uint256 i = 0; i < totalProperties; i++) {
+            address investor = address(i);
+            uint256 investorShares = property.investorShares[investor];
+            uint256 dividends = dividendPerShare * investorShares;
+            
+            balances[investor] += dividends;
+
+            emit DividendsDistributed(propertyId, investor, dividends);
+        }
+    }
+
+    function withdrawDividends() public {
+        uint256 dividends = balances[msg.sender];
+        require(dividends > 0, "No dividends to withdraw");
+
+        balances[msg.sender] = 0;
+        msg.sender.transfer(dividends);
+    }
+}
