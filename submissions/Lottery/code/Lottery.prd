@@ -1,0 +1,62 @@
+contract Lottery{
+    struct Ticket {
+        address owner;
+        uint256 value;
+    }
+
+    @global address controller;
+    @global array<Ticket> players;
+    @address uint256 balance;
+
+
+    @global function on_deploy() {
+        controller = __transaction.get_sender();
+        __debug.print(controller);
+    }
+
+    @address function deposit(uint256 value) public export {
+        balance += value;
+    }
+
+    @address function play(uint256 value) public export {
+        // each player adds balance
+        __debug.assert(value <= balance);
+        
+        balance -= value;
+        
+        Ticket ticket;
+        ticket.owner =__transaction.get_sender(); 
+        ticket.value = value;
+        
+        relay@global (^ticket) {
+            players.push(ticket);
+        }
+    }
+
+    @address function uint256 getBalance() public export {
+        return balance;
+    }
+
+    @address function pickWinner() export {
+        // only callable by owner
+        __debug.assert(controller == __transaction.get_sender());
+        __debug.assert(players.length() > 0u);
+        
+        relay@global (){
+            uint256 rnd = __block.get_timestamp(); // "random" generator
+            __debug.print(rnd);
+
+            uint32 winnerIndex = uint32(rnd % players.length());
+            address winner = players[winnerIndex].owner;
+
+            uint256 jackpot = 0u;
+            for (uint32 i = 0u32; i<players.length(); i++) {
+                jackpot += players[i].value;
+            }
+            relay@winner (^jackpot) {
+                balance += jackpot;
+            }
+            players.set_length(0u);
+        }
+    }
+}
