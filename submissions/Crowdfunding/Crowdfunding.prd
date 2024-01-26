@@ -1,0 +1,76 @@
+contract Crowdfunding {
+
+    struct Project {
+        address creator;
+        bigint goal;
+        uint64 deadline;
+        bigint currentFunding;
+        bool funded;
+    }
+
+    struct Contribution {
+        bigint amount;
+        uint64 timestamp;
+    }
+
+    @global array<Project> projects;
+    @global map<address, array<Contribution>> contributions;
+
+    // Initialize the contract
+    @global function init() export {
+        // Initialize with default values
+    }
+
+    // Create a new project
+    @address function createProject(bigint goal, uint64 deadline) export {
+        Project newProject;
+        newProject.creator = __transaction.get_sender();
+        newProject.goal = goal;
+        newProject.deadline = deadline;
+        newProject.currentFunding = 0ib;
+        newProject.funded = false;
+
+        projects.push(newProject);
+    }
+
+    // Contribute to a project
+    @address function contribute(uint32 projectIndex, bigint amount) export {
+        __debug.assert(amount > 0ib);
+        __debug.assert(projectIndex < projects.length());
+        __debug.assert(__block.get_timestamp() < projects[projectIndex].deadline);
+
+        relay@global (^projectIndex, ^amount){
+            projects[projectIndex].currentFunding += amount;
+        }
+
+        Contribution newContribution;
+        newContribution.amount = amount;
+        newContribution.timestamp = __block.get_timestamp();
+
+        contributions[__transaction.get_sender()].push(newContribution);
+    }
+
+    // Check project status and release funds if successful
+    @global function releaseFunds(uint32 projectIndex) export {
+        __debug.assert(projectIndex < projects.length());
+
+        if (projects[projectIndex].currentFunding >= projects[projectIndex].goal && __block.get_timestamp() > projects[projectIndex].deadline) {
+            projects[projectIndex].funded = true;
+            // Logic to release funds to project creator
+        }
+    }
+
+    // Refund contributions for an unsuccessful project
+    @address function refund(uint32 projectIndex) export {
+        __debug.assert(projectIndex < projects.length());
+        __debug.assert(__block.get_timestamp() > projects[projectIndex].deadline);
+        __debug.assert(!projects[projectIndex].funded);
+
+        array<Contribution> userContributions = contributions[__transaction.get_sender()];
+        for (uint32 i = 0u; i < userContributions.length(); i++) {
+            if (userContributions[i].timestamp < projects[projectIndex].deadline) {
+                // Implement logic to refund contributions
+            }
+        }
+    }
+}
