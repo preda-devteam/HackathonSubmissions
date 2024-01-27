@@ -1,0 +1,15 @@
+import Token;
+import LendingPool;
+
+contract Governance {
+    @global Token tokenContract;
+    @global LendingPool lendingPoolContract;
+    @global address owner;
+    @global map<address, bool> controllers;
+
+    @address function createProposal(string description, uint256 amount) {
+        address sender = __transaction.get_sender();
+        __debug.assert(controllers[sender], "Only controllers can create proposals.");
+        // Logic for creating a governance proposal
+    }
+}

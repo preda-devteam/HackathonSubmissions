@@ -1,0 +1,17 @@
+contract Token {
+    @global map<address, uint256> balances;
+    @global uint256 totalSupply;
+
+    @global function mint(address to, uint256 amount) {
+        __debug.assert(__transaction.get_sender() == owner, "Only the owner can mint tokens.");
+        balances[to] += amount;
+        totalSupply += amount;
+    }
+
+    @global function transfer(address to, uint256 amount) {
+        address sender = __transaction.get_sender();
+        __debug.assert(balances[sender] >= amount, "Insufficient balance");
+        balances[sender] -= amount;
+        balances[to] += amount;
+    }
+}

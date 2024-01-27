@@ -1,0 +1,8 @@
+{
+    "Token.prd": "./LendingPool.prd,./Borrowing.prd,./Governance.prd,./DAO.prd",
+    "LendingPool.prd": "./Borrowing.prd,./Governance.prd,./DAO.prd",
+    "Borrowing.prd": "../Governance.prd,./DAO.prd",
+    "Governance.prd": "./DAO.prd",
+    "DAO.prd": ""
+  }
+  

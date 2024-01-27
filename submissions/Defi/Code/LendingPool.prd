@@ -1,0 +1,13 @@
+import Token;
+
+contract LendingPool {
+    @global Token tokenContract;
+    @global address owner;
+    @global map<address, bool> controllers;
+
+    @address function deposit(uint256 amount) {
+        address sender = __transaction.get_sender();
+        __debug.assert(controllers[sender], "Only controllers can deposit funds.");
+        tokenContract.transfer(__address(), amount);
+    }
+}
