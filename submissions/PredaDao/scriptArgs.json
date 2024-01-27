@@ -1,0 +1,7 @@
+{
+    "DAOContract.prd": "./Token.prd,./Voting.prd,./Membership.prd",
+    "Token.prd": "",
+    "Voting.prd": "",
+    "Membership.prd": ""
+  }
+  

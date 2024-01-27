@@ -1,0 +1,73 @@
+contract Voting {
+    struct Proposal {
+        uint32 id; // Unique identifier for each proposal.
+        string description; // Description of the proposal.
+        address proposer; // Address of the member who proposed the idea.
+        uint256 amount; // Amount associated with the proposal.
+        mapping(address => bool) votes; // Mapping of members' votes.
+        bool executed; // Flag indicating whether the proposal has been executed.
+    }
+
+    @global uint32 proposalCounter; // Counter to generate unique proposal IDs.
+    @global map<uint32, Proposal> proposals; // Mapping of proposal IDs to Proposal structs.
+
+    @global function createProposal(string description, address proposer, uint256 amount) public {
+        // Creates a new proposal. Only the proposer can create a proposal.
+        address sender = __transaction.get_sender();
+        __debug.assert(sender == proposer, "Proposal can only be created by the proposer.");
+        proposalCounter++;
+        proposals[proposalCounter] = Proposal({
+            id: proposalCounter,
+            description: description,
+            proposer: proposer,
+            amount: amount,
+            executed: false
+        });
+    }
+
+    @global function vote(uint32 proposalId, address voter, bool support) public {
+        // Allows members to vote on a proposal. Various checks are performed to ensure a valid vote.
+        address sender = __transaction.get_sender();
+        __debug.assert(proposals.has(proposalId), "Proposal does not exist.");
+        Proposal storage proposal = proposals[proposalId];
+        __debug.assert(!proposal.executed, "Proposal already executed.");
+        __debug.assert(membershipContract.isMember(voter), "Only members can vote.");
+        __debug.assert(voter != proposal.proposer, "Proposer cannot vote on their own proposal.");
+        __debug.assert(!proposal.votes[voter], "You have already voted on this proposal.");
+        proposal.votes[voter] = support;
+    }
+
+    @global function executeProposal(uint32 proposalId, address executor) public {
+        // Executes a proposal if it has sufficient votes in favor.
+        __debug.assert(proposals.has(proposalId), "Proposal does not exist.");
+        Proposal storage proposal = proposals[proposalId];
+        __debug.assert(!proposal.executed, "Proposal already executed.");
+        __debug.assert(membershipContract.isMember(executor), "Only members can execute proposals.");
+        
+        uint256 totalVotes = 0;
+        uint256 votesInFavor = 0;
+
+        for (uint32 i = 0; i < members.length(); i++) {
+            address member = members[i];
+            if (proposal.votes[member]) {
+                votesInFavor += tokenContract.balances[member];
+            }
+            totalVotes += tokenContract.balances[member];
+        }
+
+        if ((votesInFavor * 2) > totalVotes) {
+            // Execute proposal logic here
+            __debug.print("Proposal executed: ", proposal.description);
+            // Transfer funds, update state, etc.
+            tokenContract.transfer(proposal.proposer, proposal.amount);
+        }
+
+        proposal.executed = true;
+    }
+
+    @global function getProposalDetails(uint32 proposalId) public view returns (Proposal) {
+        // Retrieves details of a specific proposal.
+        __debug.assert(proposals.has(proposalId), "Proposal does not exist.");
+        return proposals[proposalId];
+    }
+}

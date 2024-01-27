@@ -1,0 +1,10 @@
+contract Token {
+    @global map<address, uint256> balances;
+
+    @global function transfer(address to, uint256 amount) public {
+        address sender = __transaction.get_sender();
+        __debug.assert(balances[sender] >= amount, "Insufficient balance.");
+        balances[sender] -= amount;
+        balances[to] += amount;
+    }
+}
