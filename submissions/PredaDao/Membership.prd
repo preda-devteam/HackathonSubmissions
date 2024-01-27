@@ -1,0 +1,32 @@
+contract Membership {
+    @global array<address> members; // Array to store the addresses of DAO members.
+    @global map<address, bool> isMemberMap; // Mapping of addresses to boolean indicating membership status.
+
+    @global function addMember(address newMember) public {
+        // Adds a new member to the DAO. Only existing members are allowed to add new members.
+        address sender = __transaction.get_sender();
+        __debug.assert(isMember(sender), "Only members can add new members.");
+        members.push(newMember);
+        isMemberMap[newMember] = true;
+    }
+
+    @global function removeMember(address member) public {
+        // Removes a member from the DAO. Only existing members are allowed to remove members.
+        address sender = __transaction.get_sender();
+        __debug.assert(isMember(sender), "Only members can remove members.");
+        __debug.assert(isMember(member), "Member not found.");
+        for (uint32 i = 0; i < members.length(); i++) {
+            if (members[i] == member) {
+                members[i] = members[members.length() - 1];
+                members.pop();
+                isMemberMap[member] = false;
+                break;
+            }
+        }
+    }
+
+    @global function isMember(address account) public view returns (bool) {
+        // Checks if the given account is a member of the DAO.
+        return isMemberMap[account];
+    }
+}

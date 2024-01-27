@@ -1,0 +1,58 @@
+import Token; // Importing the Token contract for handling token transfers.
+import Voting; // Importing the Voting contract for managing proposals and voting.
+import Membership; // Importing the Membership contract for managing DAO members.
+
+contract DAOContract {
+    @global address owner; // Address of the DAO owner.
+    @global map<address, bool> controllers; // Mapping of addresses to boolean indicating controller status.
+
+    @global Token.Token tokenContract; // Instance of the Token contract for handling token transfers.
+    @global Membership.Membership membershipContract; // Instance of the Membership contract for managing DAO members.
+    @global Voting.Voting votingContract; // Instance of the Voting contract for managing proposals and voting.
+
+    @global function on_deploy(address _owner) {
+        owner = _owner; // Set the owner address when the contract is deployed.
+    }
+
+    @address function addController(address controller) public export {
+        // Allows the owner to add a controller who has the authority to perform specific actions.
+        __debug.assert(owner == __transaction.get_sender(), "Only owner can add controller.");
+        relay@global (^controller) {
+            controllers[controller] = true;
+        }
+    }
+
+    @address function initializeContracts(address tokenAddress, address membershipAddress, address votingAddress) public {
+        // Initializes the DAO with the addresses of the Token, Membership, and Voting contracts.
+        __debug.assert(controllers.has(__transaction.get_sender()), "Only controllers can initialize contracts.");
+        tokenContract = Token.Token(tokenAddress);
+        membershipContract = Membership.Membership(membershipAddress);
+        votingContract = Voting.Voting(votingAddress);
+    }
+
+    @address function createProposal(string description, uint256 amount) public {
+        // Allows a member to create a proposal, which involves submitting a description and an amount for voting.
+        address proposer = __transaction.get_sender();
+        __debug.assert(membershipContract.isMember(proposer), "Only members can create proposals.");
+        votingContract.createProposal(description, proposer, amount);
+    }
+
+    @address function vote(uint32 proposalId, bool support) public {
+        // Allows a member to vote on a proposal identified by its proposalId.
+        address voter = __transaction.get_sender();
+        __debug.assert(membershipContract.isMember(voter), "Only members can vote.");
+        votingContract.vote(proposalId, voter, support);
+    }
+
+    @address function executeProposal(uint32 proposalId) public {
+        // Allows a member to execute a proposal if it has received sufficient votes in favor.
+        address executor = __transaction.get_sender();
+        __debug.assert(membershipContract.isMember(executor), "Only members can execute proposals.");
+        votingContract.executeProposal(proposalId, executor);
+    }
+
+    @address function getProposalDetails(uint32 proposalId) public view returns (Voting.Proposal) {
+        // Returns details of a specific proposal using its proposalId.
+        return votingContract.getProposalDetails(proposalId);
+    }
+}
